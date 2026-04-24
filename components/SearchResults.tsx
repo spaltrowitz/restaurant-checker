@@ -95,16 +95,32 @@ function SearchResultsInner() {
 
   if (!query) return null;
 
-  const foundCount = Array.from(results.values()).filter((r) => r.found).length;
+  const resultsArr = Array.from(results.values());
+  const foundCount = resultsArr.filter((r) => r.found).length;
+  const unavailableCount = resultsArr.filter((r) => r.searchUnavailable).length;
   const checkedCount = results.size;
+
+  const summaryText = () => {
+    if (isSearching) {
+      return `Checking platforms for "${query}"… (${checkedCount}/${PLATFORMS.length})`;
+    }
+    const parts = [`Results for "${query}"`];
+    if (foundCount > 0) {
+      parts.push(`found on ${foundCount} platform${foundCount !== 1 ? "s" : ""}`);
+    } else {
+      parts.push(`found on 0 platforms`);
+    }
+    if (unavailableCount > 0) {
+      parts.push(`${unavailableCount} need manual check`);
+    }
+    return parts.join(" — ");
+  };
 
   return (
     <div className="mt-8">
       {(isSearching || isDone) && (
         <p className="mb-4 text-sm text-gray-500">
-          {isSearching
-            ? `Checking platforms for "${query}"… (${checkedCount}/${PLATFORMS.length})`
-            : `Results for "${query}" — found on ${foundCount} platform${foundCount !== 1 ? "s" : ""}`}
+          {summaryText()}
         </p>
       )}
 

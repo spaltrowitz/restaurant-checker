@@ -1,5 +1,9 @@
-import { PLATFORMS, RATE_LIMIT_DELAY, detectCardConflicts } from "@/lib/platforms";
-import { checkBlackbird, checkViaSearch, delay } from "@/lib/checkers";
+import { PLATFORMS, detectCardConflicts } from "@/lib/platforms";
+import {
+  checkBlackbird,
+  batchSearch,
+  evaluateSearchResults,
+} from "@/lib/checkers";
 
 export const runtime = "nodejs";
 
@@ -19,17 +23,36 @@ export async function GET(request: Request) {
     async start(controller) {
       const foundPlatforms: string[] = [];
 
-      for (let i = 0; i < PLATFORMS.length; i++) {
-        if (i > 0) await delay(RATE_LIMIT_DELAY);
+      // Run Blackbird sitemap check and batch web search in parallel
+      const [blackbirdResult, searchResults] = await Promise.all([
+        checkBlackbird(query),
+        batchSearch(query),
+      ]);
 
-        const platform = PLATFORMS[i];
-        const result =
-          platform.name === "Blackbird"
-            ? await checkBlackbird(query)
-            : await checkViaSearch(platform, query);
+      // Stream Blackbird result first
+      if (blackbirdResult.found) foundPlatforms.push("Blackbird");
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify(blackbirdResult)}\n\n`)
+      );
+
+      // Stream remaining platform results
+      for (const platform of PLATFORMS) {
+        if (platform.name === "Blackbird") continue;
+
+        const search = searchResults.get(platform.name);
+        const result = search
+          ? evaluateSearchResults(platform, query, search)
+          : {
+              platform: platform.name,
+              found: false,
+              details: "Search unavailable",
+              method: "error" as const,
+              url: platform.url,
+              matches: [] as string[],
+              searchUnavailable: true,
+            };
 
         if (result.found) foundPlatforms.push(result.platform);
-
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify(result)}\n\n`)
         );

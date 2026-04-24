@@ -1,5 +1,10 @@
 import { Platform, CheckResult, PLATFORMS } from "./platforms";
 import { matchesRestaurant } from "./matching";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import path from "path";
+
+const execFileAsync = promisify(execFile);
 
 export async function checkBlackbird(name: string): Promise<CheckResult> {
   const platform = PLATFORMS.find((p) => p.name === "Blackbird")!;
@@ -51,83 +56,130 @@ export async function checkBlackbird(name: string): Promise<CheckResult> {
   }
 }
 
-function stripTags(html: string): string {
-  return html.replace(/<[^>]*>/g, "").trim();
-}
+type SearchResult = { title: string; href: string; snippet: string };
+type SearchResponse = {
+  results: SearchResult[];
+  blocked: boolean;
+};
 
-async function duckduckgoSearch(
-  query: string
-): Promise<Array<{ title: string; href: string; snippet: string }>> {
-  const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-  const resp = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      Accept: "text/html",
-    },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!resp.ok) return [];
-  const html = await resp.text();
-
-  const results: Array<{ title: string; href: string; snippet: string }> = [];
-  const resultBlocks = html.split(/class="result\s/);
-
-  for (const block of resultBlocks.slice(1, 6)) {
-    const titleMatch = block.match(
-      /class="result__title"[^>]*>([\s\S]*?)<\/a>/
-    );
-    const urlMatch = block.match(/class="result__url"[^>]*>\s*([^<]+)/);
-    const snippetMatch = block.match(
-      /class="result__snippet"[^>]*>([\s\S]*?)<\/[at]/
-    );
-
-    results.push({
-      title: stripTags(titleMatch?.[1] ?? ""),
-      href: (urlMatch?.[1] ?? "").trim(),
-      snippet: stripTags(snippetMatch?.[1] ?? ""),
-    });
-  }
-  return results;
-}
-
-export async function checkViaSearch(
-  platform: Platform,
+// Batch search: runs all non-Blackbird queries in a single Python process
+export async function batchSearch(
   name: string
-): Promise<CheckResult> {
-  const query = `"${name}" ${platform.searchQuery}`;
-  const appNote = platform.appOnly
-    ? " (app-only — check the app)"
-    : "";
+): Promise<Map<string, SearchResponse>> {
+  const nonBlackbird = PLATFORMS.filter((p) => p.name !== "Blackbird");
+  const queries = nonBlackbird.map(
+    (p) => `"${name}" ${p.searchQuery}`
+  );
+
+  const resultMap = new Map<string, SearchResponse>();
+
+  // Initialize all as blocked (fallback)
+  for (const p of nonBlackbird) {
+    resultMap.set(p.name, { results: [], blocked: true });
+  }
+
+  const bridgePath = path.join(process.cwd(), "lib", "search_bridge.py");
 
   try {
-    const results = await duckduckgoSearch(query);
-    for (const r of results) {
-      if (
-        platform.domainFilter &&
-        !r.href.toLowerCase().includes(platform.domainFilter)
-      ) {
-        continue;
-      }
-      if (matchesRestaurant(`${r.title} ${r.snippet} ${r.href}`, name)) {
-        return {
-          platform: platform.name,
-          found: true,
-          details: r.title || `Found on ${platform.name}`,
-          method: "web_search",
-          url: r.href.startsWith("http") ? r.href : `https://${r.href}`,
-          matches: [],
-        };
+    const { stdout } = await execFileAsync(
+      "python3",
+      [bridgePath, "--batch", JSON.stringify(queries)],
+      { timeout: 45000, maxBuffer: 2 * 1024 * 1024 }
+    );
+
+    const batchResults: Array<{
+      query: string;
+      results: Array<{ title?: string; href?: string; body?: string }>;
+      error: string | null;
+    }> = JSON.parse(stdout.trim());
+
+    for (let i = 0; i < nonBlackbird.length; i++) {
+      const platform = nonBlackbird[i];
+      const data = batchResults[i];
+      if (data && !data.error) {
+        resultMap.set(platform.name, {
+          results: (data.results || []).map((r) => ({
+            title: r.title ?? "",
+            href: r.href ?? "",
+            snippet: r.body ?? "",
+          })),
+          blocked: false,
+        });
       }
     }
   } catch {
-    // fall through to not-found
+    // All searches stay as blocked
+  }
+
+  return resultMap;
+}
+
+// Convert raw search results into a CheckResult for a platform
+export function evaluateSearchResults(
+  platform: Platform,
+  name: string,
+  search: SearchResponse
+): CheckResult {
+  if (search.blocked) {
+    return {
+      platform: platform.name,
+      found: false,
+      details: platform.appOnly
+        ? "Search unavailable — check the app directly"
+        : "Search unavailable — check the platform directly",
+      method: "error",
+      url: platform.url,
+      matches: [],
+      searchUnavailable: true,
+    };
+  }
+
+  for (const r of search.results) {
+    if (
+      platform.domainFilter &&
+      !r.href.toLowerCase().includes(platform.domainFilter)
+    ) {
+      continue;
+    }
+    // Skip generic blog/help pages that mention restaurant names incidentally
+    const lowerHref = r.href.toLowerCase();
+    if (
+      lowerHref.includes("/blog/") ||
+      lowerHref.includes("/retailer-blog/") ||
+      lowerHref.includes("/help/") ||
+      lowerHref.includes("/faq/") ||
+      lowerHref.includes("/hc/en-us/")
+    ) {
+      continue;
+    }
+    if (matchesRestaurant(`${r.title} ${r.snippet} ${r.href}`, name)) {
+      return {
+        platform: platform.name,
+        found: true,
+        details: r.title || `Found on ${platform.name}`,
+        method: "web_search",
+        url: r.href.startsWith("http") ? r.href : `https://${r.href}`,
+        matches: [],
+      };
+    }
+  }
+
+  if (platform.appOnly) {
+    return {
+      platform: platform.name,
+      found: false,
+      details: "Not indexed on the web — check the app to verify",
+      method: "web_search",
+      url: platform.url,
+      matches: [],
+      searchUnavailable: true,
+    };
   }
 
   return {
     platform: platform.name,
     found: false,
-    details: `Not found via web search${appNote}`,
+    details: "Not found via web search",
     method: "web_search",
     url: platform.url,
     matches: [],

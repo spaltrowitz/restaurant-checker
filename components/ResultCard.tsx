@@ -54,6 +54,33 @@ export function ResultCard({ result, platformName }: ResultCardProps) {
     );
   }
 
+  if (result.searchUnavailable) {
+    return (
+      <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
+        <span className="mt-0.5 text-lg">🔗</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-amber-800">{platformName}</p>
+            {platform && (
+              <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-gray-200">
+                {platform.rewardEmoji} {platform.rewardLabel}
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-sm text-amber-700">{result.details}</p>
+          <a
+            href={platform?.url ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 rounded-md bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800 hover:bg-amber-200 transition-colors"
+          >
+            {platform?.appOnly ? "📱 Open app" : "🔗 Open"} {platformName} →
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <span className="mt-0.5 text-lg">❌</span>

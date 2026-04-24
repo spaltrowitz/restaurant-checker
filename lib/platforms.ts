@@ -20,6 +20,7 @@ export interface CheckResult {
   method: "sitemap" | "web_search" | "error";
   url: string;
   matches: string[];
+  searchUnavailable?: boolean;
 }
 
 export interface ConflictWarning {
