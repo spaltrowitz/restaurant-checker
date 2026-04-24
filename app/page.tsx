@@ -9,7 +9,7 @@ export default function Home() {
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12">
         <h1 className="text-center text-3xl font-bold">🔍 EatDiscounted</h1>
         <p className="mt-2 text-center text-gray-500">
-          Find discounts before you dine
+          Never miss a deal where you&apos;re already eating
         </p>
         <div className="mt-8">
           <SearchBar />
