@@ -1,117 +1,111 @@
-# Restaurant Discount Checker 🍽️
+# Restaurant Discount Checker v2 🍽️
 
 Check which dining discount platforms list a given restaurant — from the command line.
 
-## Platforms Checked
+## Platforms (8)
 
-| Platform | Method | Coverage |
-|----------|--------|----------|
-| **Blackbird** | Sitemap parsing | ✅ Complete — checks all listed restaurants |
-| **inKind** | Subdomain check + web search | ⚠️ Partial — subdomain format varies |
-| **Upside** | Web search | ⚠️ Limited — app-only, search may miss listings |
-| **Seated** | Web search | ⚠️ Limited — app-only, search may miss listings |
-| **Nea** | Web search | ⚠️ Limited — app-only, NYC only |
+| Platform | Reward Type | Personalized? | Card Linked? |
+|----------|:-----------:|:-------------:|:------------:|
+| **Blackbird** | ⭐ Points ($FLY) | Yes | Yes |
+| **inKind** | 🎟️ Credit (house accounts) | No | No |
+| **Upside** | 💵 Cashback | Yes | Yes ⚠️ |
+| **Seated** | 💵 Cashback | Yes | Yes ⚠️ |
+| **Nea** | 💵 Cashback (NYC only) | Yes | Yes ⚠️ |
+| **Bilt Rewards** | ⭐ Points (1-11x/dollar) | No | Yes |
+| **Rakuten Dining** | 💵 Cashback (5-10%) | No | Yes |
+| **Too Good To Go** | 🏷️ Discount (~1/3 price) | No | No |
+
+> ⚠️ **Card conflict**: Seated, Upside, and Nea cannot share the same linked card. Use a different card for each.
+
+> **Personalization note**: Most platforms serve different offers to different users. This tool checks whether a restaurant **is listed** on a platform, not what specific discount you'll get.
 
 ## Setup
 
 ```bash
-# Clone the repo
 git clone https://github.com/spaltrowitz/restaurant-checker.git
 cd restaurant-checker
-
-# Create a virtual environment and install dependencies
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-
-# Install Playwright browser (one-time, used for search fallback)
-playwright install chromium
+playwright install chromium   # one-time, for search fallback
 ```
 
-## Usage
+## Commands
+
+### `check` — Look up a restaurant across all platforms
 
 ```bash
-python restaurant_checker.py "Carbone"
-python restaurant_checker.py "Oxomoco"
-python restaurant_checker.py "The Smith"
+python restaurant_checker.py check "Carbone"
+python restaurant_checker.py check "Oxomoco"
 ```
 
-### Example Output
+Runs live checks and also shows any saved sightings you've reported. Warns you about card conflicts if the restaurant is on multiple competing platforms.
 
-```
-🍽️  Checking platforms for: "Oxomoco"
+### `report` — Log a sighting after checking an app manually
 
-============================================================
+```bash
+# Basic: record that you saw it listed
+python restaurant_checker.py report "Carbone" "Seated" -d "~20% cashback"
 
-  ✅  Blackbird    [📄 sitemap]
-      Found 1 match(es) in Blackbird sitemap
-      → https://www.blackbird.xyz/spots/oxomoco-greenpoint
+# Record with a specific date
+python restaurant_checker.py report "Lilia" "Nea" -d "6% back" --date 2026-04-20
 
-  ❌  inKind       [🔍 search]
-      Not found via web search
-      → https://inkind.com/#explore-restaurants
-
-  ❌  Upside       [🔍 search]
-      Not found via web search (app-only — check the app for full results)
-      → https://www.upside.com/find-offers
-
-  ❌  Seated       [🔍 search]
-      Not found via web search (app-only — check the app for full results)
-      → https://seatedapp.io
-
-  ❌  Nea          [🔍 search]
-      Not found via web search (app-only, NYC only — check the app)
-      → https://neaapp.ai
-
-============================================================
-
-✨ "Oxomoco" found on: Blackbird
-
-📱 App-only platforms (check manually for best results):
-   • Upside: https://www.upside.com/find-offers
-   • Seated: https://seatedapp.io
-   • Nea: https://neaapp.ai
+# Record that it's NOT listed
+python restaurant_checker.py report "McDonald's" "Blackbird" --not-listed
 ```
 
-## How It Works
+Discount notes on personalized platforms automatically get a "your offer may differ" tag.
 
-### Blackbird (most reliable)
-Parses Blackbird's **public sitemap** (`sm.xml`) which lists all partner restaurants as `/spots/{name}` URLs. This is fast, reliable, and gives 100% coverage of their listed restaurants.
+### `history` — View sighting history with freshness
 
-### inKind
-Checks if the restaurant has a subdomain on `inkind.com` (e.g., `restaurantname.inkind.com`). Falls back to DuckDuckGo web search.
+```bash
+python restaurant_checker.py history "Carbone"
+```
 
-### Upside, Seated, Nea
-These platforms are **app-only** with no public restaurant directory. The tool searches DuckDuckGo for indexed mentions, but results are limited. For the most accurate results, check these apps directly:
-- **Upside**: [upside.com/find-offers](https://www.upside.com/find-offers)
-- **Seated**: [seatedapp.io](https://seatedapp.io)
-- **Nea**: [neaapp.ai](https://neaapp.ai) (NYC only)
+Shows all sightings with freshness indicators:
+- 🟢 **Fresh** (≤7 days) — likely still accurate
+- 🟡 **Stale** (8-30 days) — may have changed
+- 🔴 **Outdated** (>30 days) — likely outdated, re-check
+
+### `platforms` — List all supported platforms
+
+```bash
+python restaurant_checker.py platforms
+```
+
+Shows reward types, personalization, card requirements, and conflict warnings.
+
+## How Checks Work
+
+| Platform | Method | Reliability |
+|----------|--------|:-----------:|
+| **Blackbird** | Public sitemap parsing (`sm.xml`) | ⭐ Excellent |
+| **inKind** | Subdomain check + web search | ⚠️ Moderate |
+| **All others** | DuckDuckGo web search | ⚠️ Limited |
+
+- **Blackbird** is the most reliable — their sitemap lists all partner restaurants
+- **Search-based checks** depend on whether the platform has indexed web pages for that restaurant
+- **App-only platforms** (Upside, Seated, Nea, Rakuten) may not be findable via search — use `report` after manually checking the app
 
 ## Compliance & Safety
 
-This tool is designed to be **completely safe** and **ToS-compliant**:
-
-- ✅ **Blackbird**: Uses their published sitemap — explicitly provided for crawlers
-- ✅ **inKind**: Checks publicly accessible subdomains (standard HTTP requests)
-- ✅ **Search**: Uses DuckDuckGo, a public search engine
-- ✅ **Rate limiting**: 2-second delay between platform checks
-- ✅ **robots.txt**: All platforms allow access to the pages we check
-- ❌ No private or undocumented APIs
-- ❌ No mobile app traffic interception
-- ❌ No authentication bypass
-- ❌ No scraping of protected content
+✅ Only uses publicly accessible data  
+✅ Respects all robots.txt rules  
+✅ Rate-limited (2s between checks)  
+✅ Standard browser behavior via Playwright  
+❌ No private or undocumented APIs  
+❌ No mobile app traffic interception  
+❌ No authentication bypass  
 
 **For personal use only.** Do not use for commercial data aggregation.
 
-## Limitations
+## Key Concepts
 
-- **App-only platforms** (Upside, Seated, Nea): Web search coverage is limited. Many restaurants listed in these apps won't be found via web search because the data lives only inside the mobile app.
-- **inKind subdomains**: The URL slug format is unpredictable (e.g., "Carbone" might be at `carbonevino.inkind.com`), so direct subdomain checks may miss valid restaurants.
-- **Search rate limiting**: DuckDuckGo may rate-limit requests if you run many searches in quick succession.
+### Card Conflicts
+Seated, Upside, and Nea all require a linked debit/credit card and **block the same card from being used across competing apps**. If you want to use multiple cashback apps, link a different card to each.
 
-## Future Improvements
+### Personalization
+Blackbird, Seated, Upside, and Nea serve **different offers to different users**. The discount percentage you see may differ from what someone else sees at the same restaurant. The `report` command lets you log what *you* saw, with a note that it's personalized.
 
-- Add more platforms (Resy, OpenTable rewards, etc.)
-- Cache sitemap data to avoid re-fetching
-- Add batch mode for checking multiple restaurants
-- Build a simple web UI
+### Freshness
+Restaurant listings change frequently — a restaurant on Seated today might not be there next week, and discount percentages shift constantly. The sightings database tracks *when* you last verified a listing so you know if your data is still reliable.

@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """
-Restaurant Discount Checker
+Restaurant Discount Checker v2
 Check which dining discount platforms list a given restaurant.
 
-Platforms checked: Blackbird, inKind, Upside, Seated, Nea
+Commands:
+  check    — look up a restaurant across all platforms (live + saved sightings)
+  report   — log that you saw a restaurant listed on a platform
+  history  — show all sightings for a restaurant with freshness indicators
+  platforms — list all supported platforms with notes on how offers work
 
-How it works:
-  • Blackbird — parses their public sitemap (fast & reliable)
-  • inKind — checks subdomain patterns (direct HTTP check)
-  • All platforms — DuckDuckGo search fallback via Playwright browser
-  • Manual check links provided for app-only platforms
+Platforms checked:
+  Blackbird, inKind, Upside, Seated, Nea, Rakuten Dining, Too Good To Go
+
+Note on personalization:
+  Most platforms serve personalized offers — different users see different
+  discounts at the same restaurant. This tool checks WHETHER a restaurant
+  is listed, not what specific discount you'll get.
 
 Compliance:
   • Only uses publicly accessible data (sitemaps, public web pages)
@@ -21,13 +27,111 @@ Compliance:
 
 import argparse
 import asyncio
+import os
 import re
+import sqlite3
 import subprocess
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Optional
 from urllib.parse import quote_plus
 
 import httpx
+
+
+# ---------------------------------------------------------------------------
+# Platform registry
+# ---------------------------------------------------------------------------
+
+PLATFORMS = {
+    "Blackbird": {
+        "url": "https://www.blackbird.xyz/where-to-blackbird",
+        "app_only": False,
+        "reward_type": "points",
+        "offer_type": "Personalized: tiered rewards via $FLY points, perks scale with visit frequency",
+        "personalized": True,
+        "card_link": True,
+        "card_conflict": False,
+    },
+    "inKind": {
+        "url": "https://inkind.com/#explore-restaurants",
+        "app_only": False,
+        "reward_type": "credit",
+        "offer_type": "Mostly uniform: pre-pay house accounts with bonus credit (e.g. spend $100 get $120)",
+        "personalized": False,
+        "card_link": False,
+        "card_conflict": False,
+    },
+    "Upside": {
+        "url": "https://www.upside.com/find-offers",
+        "app_only": True,
+        "reward_type": "cashback",
+        "offer_type": "Personalized: cashback % varies per user, time, and spending history",
+        "personalized": True,
+        "card_link": True,
+        "card_conflict": True,
+    },
+    "Seated": {
+        "url": "https://seatedapp.io",
+        "app_only": True,
+        "reward_type": "cashback",
+        "offer_type": "Personalized: cashback % varies by user, time of day, day of week (up to 30%)",
+        "personalized": True,
+        "card_link": True,
+        "card_conflict": True,
+    },
+    "Nea": {
+        "url": "https://neaapp.ai",
+        "app_only": True,
+        "reward_type": "cashback",
+        "offer_type": "Personalized: daily rewards vary per user, ~6% avg cashback to Venmo (NYC only)",
+        "personalized": True,
+        "card_link": True,
+        "card_conflict": True,
+    },
+    "Bilt Rewards": {
+        "url": "https://www.biltrewards.com/dining",
+        "app_only": False,
+        "reward_type": "points",
+        "offer_type": "Points: 1-5x Bilt points/$ (up to 11x on Rent Day w/ Bilt card). Transferable to airlines/hotels",
+        "personalized": False,
+        "card_link": True,
+        "card_conflict": False,
+    },
+    "Rakuten Dining": {
+        "url": "https://www.rakuten.com/dining",
+        "app_only": True,
+        "reward_type": "cashback",
+        "offer_type": "Uniform: 5% cashback (10% w/ Rakuten Amex) at all participating restaurants",
+        "personalized": False,
+        "card_link": True,
+        "card_conflict": False,
+    },
+    "Too Good To Go": {
+        "url": "https://www.toogoodtogo.com",
+        "app_only": False,
+        "reward_type": "discount",
+        "offer_type": "Uniform: surprise bags of surplus food at ~1/3 retail price",
+        "personalized": False,
+        "card_link": False,
+        "card_conflict": False,
+    },
+}
+
+# Platforms that conflict with each other for card linking.
+# You generally cannot have the same card linked to multiple apps in a group.
+CARD_CONFLICT_GROUPS = [
+    {"Seated", "Upside", "Nea"},  # card-linked cashback apps that block each other
+]
+
+RATE_LIMIT_DELAY = 2
+
+# Freshness thresholds for sightings
+FRESH_DAYS = 7       # ≤7 days = fresh
+STALE_DAYS = 30      # ≤30 days = may have changed
+                     # >30 days = likely outdated
 
 
 # ---------------------------------------------------------------------------
@@ -39,411 +143,547 @@ class CheckResult:
     platform: str
     found: bool
     details: str
-    method: str
+    method: str        # "sitemap", "subdomain", "web_search", "sighting"
     url: str = ""
     matches: list = field(default_factory=list)
 
 
-RATE_LIMIT_DELAY = 2
+# ---------------------------------------------------------------------------
+# Sightings database
+# ---------------------------------------------------------------------------
+
+DB_PATH = Path(__file__).parent / "sightings.db"
 
 
-def normalize(text: str) -> str:
+def get_db() -> sqlite3.Connection:
+    db = sqlite3.connect(str(DB_PATH))
+    db.row_factory = sqlite3.Row
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS sightings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            restaurant TEXT NOT NULL,
+            restaurant_normalized TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            listed INTEGER NOT NULL DEFAULT 1,
+            discount_note TEXT DEFAULT '',
+            date_seen TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_sightings_lookup
+        ON sightings (restaurant_normalized, platform)
+    """)
+    db.commit()
+    return db
+
+
+def _norm(text: str) -> str:
     return re.sub(r"[^a-z0-9\s]", "", text.lower()).strip()
 
 
-def slug_variants(name: str) -> list[str]:
-    """Generate possible URL slug variants from a restaurant name."""
-    name = name.strip()
-    lower = name.lower()
-    nopunc = re.sub(r"[^a-z0-9\s]", "", lower)
-    words = nopunc.split()
+def add_sighting(
+    restaurant: str,
+    platform: str,
+    listed: bool = True,
+    discount_note: str = "",
+    date_seen: str = "",
+):
+    if not date_seen:
+        date_seen = datetime.now().strftime("%Y-%m-%d")
+    db = get_db()
+    db.execute(
+        """INSERT INTO sightings
+           (restaurant, restaurant_normalized, platform, listed, discount_note, date_seen)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (restaurant, _norm(restaurant), platform, int(listed), discount_note, date_seen),
+    )
+    db.commit()
+    db.close()
 
+
+def get_sightings(restaurant: str) -> list[dict]:
+    db = get_db()
+    rows = db.execute(
+        """SELECT * FROM sightings
+           WHERE restaurant_normalized = ?
+           ORDER BY date_seen DESC""",
+        (_norm(restaurant),),
+    ).fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
+def get_latest_sighting(restaurant: str, platform: str) -> Optional[dict]:
+    db = get_db()
+    row = db.execute(
+        """SELECT * FROM sightings
+           WHERE restaurant_normalized = ? AND platform = ?
+           ORDER BY date_seen DESC LIMIT 1""",
+        (_norm(restaurant), platform),
+    ).fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
+def freshness_label(date_str: str) -> tuple[str, str]:
+    try:
+        d = datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        return "❓", "unknown date"
+    age = (datetime.now() - d).days
+    if age <= FRESH_DAYS:
+        return "🟢", f"{age}d ago — fresh"
+    elif age <= STALE_DAYS:
+        return "🟡", f"{age}d ago — may have changed"
+    else:
+        return "🔴", f"{age}d ago — likely outdated"
+
+
+# ---------------------------------------------------------------------------
+# Matching helpers
+# ---------------------------------------------------------------------------
+
+def slug_variants(name: str) -> list[str]:
+    nopunc = re.sub(r"[^a-z0-9\s]", "", name.lower()).strip()
+    words = nopunc.split()
     variants = set()
-    variants.add(nopunc.replace(" ", ""))        # "thesmith"
-    variants.add(nopunc.replace(" ", "-"))        # "the-smith"
+    variants.add(nopunc.replace(" ", ""))
+    variants.add(nopunc.replace(" ", "-"))
     if words and words[0] == "the":
         rest = words[1:]
-        variants.add("".join(rest))              # "smith"
-        variants.add("-".join(rest))             # "smith"
+        variants.add("".join(rest))
+        variants.add("-".join(rest))
     variants.discard("")
     return list(variants)
 
 
-def matches_restaurant(text: str, restaurant_name: str) -> bool:
-    text_norm = normalize(text)
-    name_norm = normalize(restaurant_name)
-    if name_norm in text_norm:
+def matches_restaurant(text: str, name: str) -> bool:
+    t, n = _norm(text), _norm(name)
+    if n in t:
         return True
-    words = [w for w in name_norm.split() if len(w) > 2]
-    return bool(words) and all(w in text_norm for w in words)
+    words = [w for w in n.split() if len(w) > 2]
+    return bool(words) and all(w in t for w in words)
 
 
 # ---------------------------------------------------------------------------
-# 1. Blackbird — Sitemap parsing
+# Live platform checkers
 # ---------------------------------------------------------------------------
 
-async def check_blackbird(restaurant_name: str) -> CheckResult:
-    """Parse Blackbird's public sitemap to find restaurants."""
+async def check_blackbird(name: str) -> CheckResult:
+    """Parse Blackbird's public sitemap."""
     async with httpx.AsyncClient() as client:
         try:
             resp = await client.get(
                 "https://www.blackbird.xyz/sm.xml",
-                timeout=15,
-                follow_redirects=True,
+                timeout=15, follow_redirects=True,
             )
             resp.raise_for_status()
         except Exception as e:
-            return CheckResult(
-                platform="Blackbird",
-                found=False,
-                details=f"Could not fetch sitemap: {e}",
-                method="sitemap",
-                url="https://www.blackbird.xyz/where-to-blackbird",
-            )
+            return CheckResult("Blackbird", False, f"Sitemap error: {e}", "sitemap",
+                               PLATFORMS["Blackbird"]["url"])
 
         spots = re.findall(
-            r"<loc>(https://www\.blackbird\.xyz/spots/[^<]+)</loc>",
-            resp.text,
-        )
+            r"<loc>(https://www\.blackbird\.xyz/spots/[^<]+)</loc>", resp.text)
+        found = [u for u in spots
+                 if matches_restaurant(u.split("/spots/")[-1].replace("-", " "), name)]
 
-        found_spots = []
-        for spot_url in spots:
-            slug = spot_url.split("/spots/")[-1]
-            slug_readable = slug.replace("-", " ")
-            if matches_restaurant(slug_readable, restaurant_name):
-                found_spots.append(spot_url)
+        if found:
+            return CheckResult("Blackbird", True,
+                               f"Found {len(found)} match(es) in sitemap",
+                               "sitemap", found[0], found)
+        return CheckResult("Blackbird", False,
+                           f"Not in sitemap ({len(spots)} restaurants)",
+                           "sitemap", PLATFORMS["Blackbird"]["url"])
 
-        if found_spots:
-            return CheckResult(
-                platform="Blackbird",
-                found=True,
-                details=f"Found {len(found_spots)} match(es) in Blackbird sitemap",
-                method="sitemap",
-                url=found_spots[0],
-                matches=found_spots,
-            )
-
-        return CheckResult(
-            platform="Blackbird",
-            found=False,
-            details=f"Not in Blackbird sitemap ({len(spots)} restaurants checked)",
-            method="sitemap",
-            url="https://www.blackbird.xyz/where-to-blackbird",
-        )
-
-
-# ---------------------------------------------------------------------------
-# 2. inKind — Subdomain check + search
-# ---------------------------------------------------------------------------
 
 INKIND_DEFAULT_TITLE = "Download the inKind App | inKind"
 
-
-async def check_inkind(restaurant_name: str) -> CheckResult:
-    """Check inKind by testing subdomain patterns, then falling back to search."""
-    variants = slug_variants(restaurant_name)
-
+async def check_inkind(name: str) -> CheckResult:
+    """Check inKind subdomains, then fall back to search."""
     async with httpx.AsyncClient(follow_redirects=True, timeout=10) as client:
-        for slug in variants:
+        for slug in slug_variants(name):
             try:
                 resp = await client.get(f"https://{slug}.inkind.com")
-                title_match = re.search(r"<title>([^<]+)</title>", resp.text)
-                title = title_match.group(1) if title_match else ""
-
+                m = re.search(r"<title>([^<]+)</title>", resp.text)
+                title = m.group(1) if m else ""
                 if title and title != INKIND_DEFAULT_TITLE:
-                    return CheckResult(
-                        platform="inKind",
-                        found=True,
-                        details=f"{title}",
-                        method="subdomain",
-                        url=f"https://{slug}.inkind.com",
-                    )
+                    return CheckResult("inKind", True, title, "subdomain",
+                                       f"https://{slug}.inkind.com")
             except Exception:
                 continue
-
-    # Fall back to search
-    return await _search_platform(
-        restaurant_name,
-        platform="inKind",
-        site_query="site:inkind.com",
-        fallback_url="https://inkind.com/#explore-restaurants",
-        app_only_note="",
-    )
+    return await _search("inKind", name, "site:inkind.com")
 
 
-# ---------------------------------------------------------------------------
-# 3–5. Upside, Seated, Nea — Search-based
-# ---------------------------------------------------------------------------
+async def check_upside(name: str) -> CheckResult:
+    return await _search("Upside", name, "site:upside.com",
+                         domain_filter="upside.com")
 
-async def check_upside(restaurant_name: str) -> CheckResult:
-    return await _search_platform(
-        restaurant_name,
-        platform="Upside",
-        site_query="site:upside.com",
-        fallback_url="https://www.upside.com/find-offers",
-        app_only_note="app-only — check the app for full results",
-    )
+async def check_seated(name: str) -> CheckResult:
+    return await _search("Seated", name,
+                         "(site:seatedapp.io OR site:getseated.com)",
+                         domain_filter="seated")
+
+async def check_nea(name: str) -> CheckResult:
+    return await _search("Nea", name, "site:neaapp.ai",
+                         domain_filter="neaapp.ai")
+
+async def check_rakuten(name: str) -> CheckResult:
+    return await _search("Rakuten Dining", name,
+                         "site:rakuten.com/dining OR site:rakuten.com/food",
+                         domain_filter="rakuten.com")
+
+async def check_bilt(name: str) -> CheckResult:
+    return await _search("Bilt Rewards", name,
+                         "site:biltrewards.com dining",
+                         domain_filter="biltrewards.com")
+
+async def check_toogoodtogo(name: str) -> CheckResult:
+    return await _search("Too Good To Go", name, "site:toogoodtogo.com",
+                         domain_filter="toogoodtogo.com")
 
 
-async def check_seated(restaurant_name: str) -> CheckResult:
-    # Only search seatedapp.io and getseated.com — seated.com is a different
-    # company (event ticketing) and causes false positives
-    return await _search_platform(
-        restaurant_name,
-        platform="Seated",
-        site_query="(site:seatedapp.io OR site:getseated.com)",
-        fallback_url="https://seatedapp.io",
-        app_only_note="app-only — check the app for full results",
-    )
-
-
-async def check_nea(restaurant_name: str) -> CheckResult:
-    return await _search_platform(
-        restaurant_name,
-        platform="Nea",
-        site_query="site:neaapp.ai",
-        fallback_url="https://neaapp.ai",
-        app_only_note="app-only, NYC only — check the app",
-    )
+CHECKERS = {
+    "Blackbird": check_blackbird,
+    "inKind": check_inkind,
+    "Upside": check_upside,
+    "Seated": check_seated,
+    "Nea": check_nea,
+    "Bilt Rewards": check_bilt,
+    "Rakuten Dining": check_rakuten,
+    "Too Good To Go": check_toogoodtogo,
+}
 
 
 # ---------------------------------------------------------------------------
-# Search engine helper — tries ddgs, then Playwright, then curl
+# Search helpers — tries ddgs → Playwright → curl
 # ---------------------------------------------------------------------------
 
-async def _search_platform(
-    restaurant_name: str,
-    platform: str,
-    site_query: str,
-    fallback_url: str,
-    app_only_note: str,
-) -> CheckResult:
-    """Search for a restaurant on a platform using multiple search strategies."""
-    query = f'"{restaurant_name}" {site_query}'
+async def _search(platform: str, name: str, site_q: str,
+                  domain_filter: str = "") -> CheckResult:
+    url = PLATFORMS[platform]["url"]
+    app_note = " (app-only — check the app for full results)" if PLATFORMS[platform]["app_only"] else ""
+    query = f'"{name}" {site_q}'
 
-    # Strategy 1: ddgs package (most lightweight)
-    results = _try_ddgs_search(query)
-    if results:
-        for r in results:
-            combined = f"{r.get('title', '')} {r.get('body', '')} {r.get('href', '')}"
-            if matches_restaurant(combined, restaurant_name):
-                return CheckResult(
-                    platform=platform,
-                    found=True,
-                    details=r.get("title", f"Found on {platform}"),
-                    method="web_search",
-                    url=r.get("href", fallback_url),
-                )
+    for strategy in [_try_ddgs, _try_playwright, _try_curl]:
+        try:
+            results = await strategy(query) if asyncio.iscoroutinefunction(strategy) \
+                else await asyncio.to_thread(strategy, query)
+        except Exception:
+            results = []
+        if results:
+            for title, href, snippet in results:
+                # Skip results from wrong domains
+                if domain_filter and href and domain_filter not in href.lower():
+                    continue
+                if matches_restaurant(f"{title} {snippet} {href}", name):
+                    return CheckResult(platform, True,
+                                       title or f"Found on {platform}",
+                                       "web_search", href or url)
 
-    # Strategy 2: Playwright browser search
-    results = await _try_playwright_search(query)
-    if results:
-        for title, url, snippet in results:
-            combined = f"{title} {snippet} {url}"
-            if matches_restaurant(combined, restaurant_name):
-                return CheckResult(
-                    platform=platform,
-                    found=True,
-                    details=title or f"Found on {platform}",
-                    method="web_search",
-                    url=url or fallback_url,
-                )
-
-    # Strategy 3: curl-based search
-    results = _try_curl_search(query)
-    if results:
-        for title, url, snippet in results:
-            combined = f"{title} {snippet} {url}"
-            if matches_restaurant(combined, restaurant_name):
-                return CheckResult(
-                    platform=platform,
-                    found=True,
-                    details=title or f"Found on {platform}",
-                    method="web_search",
-                    url=url or fallback_url,
-                )
-
-    not_found_msg = f"Not found via web search"
-    if app_only_note:
-        not_found_msg += f" ({app_only_note})"
-
-    return CheckResult(
-        platform=platform,
-        found=False,
-        details=not_found_msg,
-        method="web_search",
-        url=fallback_url,
-    )
+    return CheckResult(platform, False, f"Not found via web search{app_note}",
+                       "web_search", url)
 
 
-def _try_ddgs_search(query: str) -> list[dict]:
-    """Try searching with the ddgs package."""
+def _try_ddgs(query: str) -> list[tuple]:
     try:
         from ddgs import DDGS
-        return DDGS().text(query, max_results=5) or []
+        raw = DDGS().text(query, max_results=5) or []
+        return [(r.get("title", ""), r.get("href", ""), r.get("body", ""))
+                for r in raw]
     except Exception:
         return []
 
 
-async def _try_playwright_search(query: str) -> list[tuple]:
-    """Use Playwright to search DuckDuckGo in a real browser."""
+async def _try_playwright(query: str) -> list[tuple]:
     try:
         from playwright.async_api import async_playwright
     except ImportError:
         return []
-
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-
-            url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"
-            await page.goto(url, wait_until="domcontentloaded", timeout=15000)
+            await page.goto(
+                f"https://html.duckduckgo.com/html/?q={quote_plus(query)}",
+                wait_until="domcontentloaded", timeout=15000)
             await page.wait_for_timeout(2000)
-
-            results = []
-            elements = await page.query_selector_all(".result")
-            for elem in elements[:5]:
-                title_el = await elem.query_selector(".result__title")
-                snippet_el = await elem.query_selector(".result__snippet")
-                url_el = await elem.query_selector(".result__url")
-
-                title = await title_el.inner_text() if title_el else ""
-                snippet = await snippet_el.inner_text() if snippet_el else ""
-                href = await url_el.inner_text() if url_el else ""
-                results.append((title.strip(), href.strip(), snippet.strip()))
-
+            out = []
+            for el in (await page.query_selector_all(".result"))[:5]:
+                t = await el.query_selector(".result__title")
+                s = await el.query_selector(".result__snippet")
+                u = await el.query_selector(".result__url")
+                out.append((
+                    (await t.inner_text()).strip() if t else "",
+                    (await u.inner_text()).strip() if u else "",
+                    (await s.inner_text()).strip() if s else "",
+                ))
             await browser.close()
-            return results
+            return out
     except Exception:
         return []
 
 
-def _try_curl_search(query: str) -> list[tuple]:
-    """Use curl subprocess to search DuckDuckGo (bypasses Python SSL issues)."""
+def _try_curl(query: str) -> list[tuple]:
     try:
-        url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"
-        result = subprocess.run(
-            [
-                "curl", "-s", "-L",
-                "-H", "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-                "-H", "Accept: text/html",
-                url,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-        if result.returncode != 0:
+        r = subprocess.run(
+            ["curl", "-s", "-L",
+             "-H", "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+             "-H", "Accept: text/html",
+             f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"],
+            capture_output=True, text=True, timeout=15)
+        if r.returncode != 0:
             return []
-
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(result.stdout, "html.parser")
-        results = []
-        for r in soup.select(".result")[:5]:
-            title_el = r.select_one(".result__title")
-            snippet_el = r.select_one(".result__snippet")
-            url_el = r.select_one(".result__url")
-            results.append((
-                title_el.get_text(strip=True) if title_el else "",
-                url_el.get_text(strip=True) if url_el else "",
-                snippet_el.get_text(strip=True) if snippet_el else "",
-            ))
-        return results
+        soup = BeautifulSoup(r.stdout, "html.parser")
+        return [
+            (
+                (e.select_one(".result__title") or type("", (), {"get_text": lambda **_: ""})).get_text(strip=True),
+                (e.select_one(".result__url") or type("", (), {"get_text": lambda **_: ""})).get_text(strip=True),
+                (e.select_one(".result__snippet") or type("", (), {"get_text": lambda **_: ""})).get_text(strip=True),
+            )
+            for e in soup.select(".result")[:5]
+        ]
     except Exception:
         return []
 
 
 # ---------------------------------------------------------------------------
-# Output
+# CLI: check
 # ---------------------------------------------------------------------------
 
-def print_result(result: CheckResult):
-    icon = "✅" if result.found else "❌"
-    method_label = {
-        "sitemap": "📄 sitemap",
-        "subdomain": "🌐 direct",
-        "web_search": "🔍 search",
-    }
-    method = method_label.get(result.method, result.method)
-
-    print(f"  {icon}  {result.platform:<12} [{method}]")
-    print(f"      {result.details}")
-    if result.url:
-        print(f"      → {result.url}")
-    if result.matches and len(result.matches) > 1:
-        for m in result.matches[1:]:
-            print(f"      → {m}")
+def print_result(r: CheckResult):
+    icon = "✅" if r.found else "❌"
+    label = {"sitemap": "📄 sitemap", "subdomain": "🌐 direct",
+             "web_search": "🔍 search", "sighting": "📝 sighting"
+             }.get(r.method, r.method)
+    print(f"  {icon}  {r.platform:<18} [{label}]")
+    print(f"      {r.details}")
+    if r.url:
+        print(f"      → {r.url}")
+    for m in (r.matches or [])[1:]:
+        print(f"      → {m}")
     print()
 
 
-async def run_checks(restaurant_name: str):
-    print(f"\n🍽️  Checking platforms for: \"{restaurant_name}\"\n")
-    print("=" * 60)
+async def cmd_check(args):
+    name = args.restaurant
+    print(f"\n🍽️  Checking platforms for: \"{name}\"\n")
+    print("=" * 64)
     print()
-
-    checkers = [
-        ("Blackbird", check_blackbird),
-        ("inKind", check_inkind),
-        ("Upside", check_upside),
-        ("Seated", check_seated),
-        ("Nea", check_nea),
-    ]
 
     results = []
-    for i, (name, checker) in enumerate(checkers):
+    for i, (plat, checker) in enumerate(CHECKERS.items()):
         if i > 0:
             await asyncio.sleep(RATE_LIMIT_DELAY)
-
-        sys.stdout.write(f"  ⏳ Checking {name}...\r")
+        sys.stdout.write(f"  ⏳ Checking {plat}...\r")
         sys.stdout.flush()
         try:
-            result = await checker(restaurant_name)
+            result = await checker(name)
         except Exception as e:
-            result = CheckResult(
-                platform=name, found=False, details=f"Error: {e}", method="error",
-            )
+            result = CheckResult(plat, False, f"Error: {e}", "error")
         results.append(result)
         sys.stdout.write("\033[2K")
         print_result(result)
 
-    print("=" * 60)
+    # Show saved sightings
+    sightings = get_sightings(name)
+    if sightings:
+        print("-" * 64)
+        print("  📝 Saved sightings from your reports:\n")
+        seen_platforms = set()
+        for s in sightings:
+            if s["platform"] in seen_platforms:
+                continue
+            seen_platforms.add(s["platform"])
+            emoji, age = freshness_label(s["date_seen"])
+            status = "listed" if s["listed"] else "NOT listed"
+            disc = f' — "{s["discount_note"]}"' if s["discount_note"] else ""
+            pers = " ⚠️  offers are personalized" if PLATFORMS.get(s["platform"], {}).get("personalized") else ""
+            print(f"  {emoji}  {s['platform']:<18} {status} (seen {s['date_seen']}, {age}){disc}{pers}")
+        print()
+
+    # Summary
+    print("=" * 64)
     found = [r for r in results if r.found]
     if found:
-        print(f"\n✨ \"{restaurant_name}\" found on: {', '.join(r.platform for r in found)}")
+        print(f"\n✨ \"{name}\" found on: {', '.join(r.platform for r in found)}")
     else:
-        print(f"\n😕 \"{restaurant_name}\" was not found on any platform.")
-        print("   Tip: Some platforms are app-only — check the apps for the most accurate results.")
+        print(f"\n😕 \"{name}\" was not found on any platform via live check.")
 
-    app_only = [r for r in results if "app-only" in r.details]
+    app_only = [r for r in results
+                if not r.found and PLATFORMS.get(r.platform, {}).get("app_only")]
     if app_only:
         print(f"\n📱 App-only platforms (check manually for best results):")
         for r in app_only:
             print(f"   • {r.platform}: {r.url}")
 
-    print()
-    return results
+    # Auto-save positive live results as sightings
+    today = datetime.now().strftime("%Y-%m-%d")
+    for r in found:
+        existing = get_latest_sighting(name, r.platform)
+        if not existing or existing["date_seen"] != today:
+            add_sighting(name, r.platform, listed=True, date_seen=today)
 
+    # Card conflict warning
+    all_found_platforms = {r.platform for r in found}
+    # Also include sighted platforms
+    for s in (sightings or []):
+        if s["listed"]:
+            all_found_platforms.add(s["platform"])
+    for group in CARD_CONFLICT_GROUPS:
+        overlap = all_found_platforms & group
+        if len(overlap) > 1:
+            print(f"\n⚠️  Card conflict: {', '.join(sorted(overlap))} cannot share the same linked card.")
+            print(f"   Use a different card for each, or pick one cashback app per card.")
+
+    print()
+
+
+# ---------------------------------------------------------------------------
+# CLI: report
+# ---------------------------------------------------------------------------
+
+def cmd_report(args):
+    platform = args.platform
+
+    # Fuzzy-match platform name
+    matches = [p for p in PLATFORMS if p.lower() == platform.lower()]
+    if not matches:
+        matches = [p for p in PLATFORMS if platform.lower() in p.lower()]
+    if not matches:
+        print(f"❌ Unknown platform: {platform}")
+        print(f"   Known platforms: {', '.join(PLATFORMS.keys())}")
+        return
+    platform = matches[0]
+
+    listed = not args.not_listed
+    discount = args.discount or ""
+    date = args.date or datetime.now().strftime("%Y-%m-%d")
+
+    if PLATFORMS[platform].get("personalized") and discount:
+        discount += " (personalized — your offer may differ)"
+
+    add_sighting(args.restaurant, platform, listed=listed,
+                 discount_note=discount, date_seen=date)
+
+    status = "listed ✅" if listed else "NOT listed ❌"
+    print(f"\n📝 Recorded: \"{args.restaurant}\" is {status} on {platform} (as of {date})")
+    if discount:
+        print(f"   Discount note: {discount}")
+    print()
+
+
+# ---------------------------------------------------------------------------
+# CLI: history
+# ---------------------------------------------------------------------------
+
+def cmd_history(args):
+    name = args.restaurant
+    sightings = get_sightings(name)
+
+    if not sightings:
+        print(f"\n📭 No sightings recorded for \"{name}\".")
+        print("   Use 'check' to do a live search, or 'report' to log a sighting.\n")
+        return
+
+    print(f"\n📋 Sighting history for \"{name}\"\n")
+    print(f"   {'Platform':<18} {'Status':<10} {'Date':<12} {'Freshness':<24} Discount Note")
+    print(f"   {'─'*18} {'─'*10} {'─'*12} {'─'*24} {'─'*30}")
+
+    for s in sightings:
+        emoji, age = freshness_label(s["date_seen"])
+        status = "listed" if s["listed"] else "NOT listed"
+        disc = s["discount_note"] or "—"
+        print(f"   {s['platform']:<18} {status:<10} {s['date_seen']:<12} {emoji} {age:<21} {disc}")
+
+    print(f"\n   Total: {len(sightings)} sighting(s)\n")
+
+
+# ---------------------------------------------------------------------------
+# CLI: platforms
+# ---------------------------------------------------------------------------
+
+def cmd_platforms(_args):
+    print("\n📋 Supported platforms\n")
+    for name, info in PLATFORMS.items():
+        pers = "👤 Personalized" if info["personalized"] else "🏷️  Uniform"
+        mode = "📱 App-only" if info["app_only"] else "🌐 Web + App"
+        rtype = {"cashback": "💵 Cashback", "points": "⭐ Points",
+                 "credit": "🎟️  Credit", "discount": "🏷️  Discount"
+                 }.get(info["reward_type"], info["reward_type"])
+        print(f"  {name}")
+        print(f"    {mode}  |  {pers}  |  {rtype}")
+        print(f"    {info['offer_type']}")
+        if info.get("card_link"):
+            conflict_note = ""
+            if info.get("card_conflict"):
+                # Find which platforms conflict with this one
+                partners = []
+                for group in CARD_CONFLICT_GROUPS:
+                    if name in group:
+                        partners = sorted(group - {name})
+                if partners:
+                    conflict_note = f" ⚠️  Card conflicts with: {', '.join(partners)}"
+            print(f"    🔗 Requires linked card{conflict_note}")
+        print(f"    → {info['url']}")
+        print()
+
+    print("  ⚠️  Card conflict note:")
+    print("  Some card-linked cashback apps block the same card from being")
+    print("  linked to competing apps. Use different cards for different apps,")
+    print("  or choose one cashback app per card.")
+    print()
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Check which dining discount platforms list a given restaurant.",
-        epilog=(
-            "Platforms: Blackbird, inKind, Upside, Seated, Nea\n\n"
-            "Methods:\n"
-            "  • Blackbird: public sitemap parsing (sm.xml)\n"
-            "  • inKind: subdomain check + web search\n"
-            "  • Others: DuckDuckGo web search\n\n"
-            "Only uses publicly accessible data. For personal use only."
-        ),
+        description="Restaurant Discount Checker v2 — find which platforms list a restaurant.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
-        "restaurant",
-        help='Name of the restaurant to search for (e.g. "Carbone")',
-    )
+    sub = parser.add_subparsers(dest="command")
+
+    # check
+    p_check = sub.add_parser("check", help="Look up a restaurant across all platforms")
+    p_check.add_argument("restaurant", help='Restaurant name (e.g. "Carbone")')
+
+    # report
+    p_report = sub.add_parser("report", help="Log that you saw a restaurant on a platform")
+    p_report.add_argument("restaurant", help="Restaurant name")
+    p_report.add_argument("platform", help=f"Platform name ({', '.join(PLATFORMS.keys())})")
+    p_report.add_argument("-d", "--discount", help="Discount note (e.g. '15%% cashback', '$20 bonus on $100')")
+    p_report.add_argument("--date", help="Date seen (YYYY-MM-DD, default: today)")
+    p_report.add_argument("--not-listed", action="store_true",
+                          help="Record that the restaurant is NOT listed on this platform")
+
+    # history
+    p_hist = sub.add_parser("history", help="Show sighting history for a restaurant")
+    p_hist.add_argument("restaurant", help="Restaurant name")
+
+    # platforms
+    sub.add_parser("platforms", help="List all supported platforms")
+
     args = parser.parse_args()
-    asyncio.run(run_checks(args.restaurant))
+
+    if args.command == "check":
+        asyncio.run(cmd_check(args))
+    elif args.command == "report":
+        cmd_report(args)
+    elif args.command == "history":
+        cmd_history(args)
+    elif args.command == "platforms":
+        cmd_platforms(args)
+    else:
+        # Default: if a bare restaurant name is given, treat as check
+        if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
+            args = argparse.Namespace(restaurant=" ".join(sys.argv[1:]))
+            asyncio.run(cmd_check(args))
+        else:
+            parser.print_help()
 
 
 if __name__ == "__main__":
