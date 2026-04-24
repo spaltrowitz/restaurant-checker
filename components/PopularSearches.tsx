@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 const CURATED_NYC = [
   "Carbone",
@@ -17,8 +18,12 @@ const CURATED_NYC = [
   "Win Son",
 ];
 
-export function PopularSearches() {
+function PopularSearchesInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q");
+
+  if (query) return null;
 
   function handleClick(name: string) {
     router.push(`/?q=${encodeURIComponent(name)}`);
@@ -41,5 +46,13 @@ export function PopularSearches() {
         ))}
       </div>
     </div>
+  );
+}
+
+export function PopularSearches() {
+  return (
+    <Suspense fallback={null}>
+      <PopularSearchesInner />
+    </Suspense>
   );
 }

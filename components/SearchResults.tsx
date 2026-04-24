@@ -103,8 +103,8 @@ function SearchResultsInner() {
       {(isSearching || isDone) && (
         <p className="mb-4 text-sm text-gray-500">
           {isSearching
-            ? `Checking platforms… (${checkedCount}/${PLATFORMS.length})`
-            : `Done — found on ${foundCount} platform${foundCount !== 1 ? "s" : ""}`}
+            ? `Checking platforms for "${query}"… (${checkedCount}/${PLATFORMS.length})`
+            : `Results for "${query}" — found on ${foundCount} platform${foundCount !== 1 ? "s" : ""}`}
         </p>
       )}
 
