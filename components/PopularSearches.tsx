@@ -2,19 +2,19 @@
 
 import { useRouter } from "next/navigation";
 
-const POPULAR_NYC = [
+const CURATED_NYC = [
   "Carbone",
   "Tatiana",
   "Thai Diner",
   "Oxomoco",
-  "L'Artusi",
-  "Via Carota",
+  "Dhamaka",
   "Los Tacos No. 1",
   "Joe's Pizza",
   "Lilia",
   "Don Angie",
-  "Atomix",
-  "Dhamaka",
+  "Lovely Day",
+  "Bonnie's",
+  "Win Son",
 ];
 
 export function PopularSearches() {
@@ -27,10 +27,10 @@ export function PopularSearches() {
   return (
     <div className="mt-8">
       <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-        Popular in NYC
+        Try searching
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
-        {POPULAR_NYC.map((name) => (
+        {CURATED_NYC.map((name) => (
           <button
             key={name}
             onClick={() => handleClick(name)}
