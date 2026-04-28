@@ -1,10 +1,5 @@
 import { Platform, CheckResult, PLATFORMS } from "./platforms";
 import { matchesRestaurant } from "./matching";
-import { execFile } from "child_process";
-import { promisify } from "util";
-import path from "path";
-
-const execFileAsync = promisify(execFile);
 
 export async function checkBlackbird(name: string): Promise<CheckResult> {
   const platform = PLATFORMS.find((p) => p.name === "Blackbird")!;
@@ -62,15 +57,48 @@ type SearchResponse = {
   blocked: boolean;
 };
 
-// Batch search: runs all non-Blackbird queries in a single Python process
+interface SerperResult {
+  title?: string;
+  link?: string;
+  snippet?: string;
+}
+
+// Search via Serper.dev Google Search API
+async function serperSearch(query: string): Promise<SearchResult[]> {
+  const apiKey = process.env.SERPER_API_KEY;
+  if (!apiKey || apiKey === "your_api_key_here") {
+    throw new Error("SERPER_API_KEY not configured");
+  }
+
+  const resp = await fetch("https://google.serper.dev/search", {
+    method: "POST",
+    headers: {
+      "X-API-KEY": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ q: query, num: 10 }),
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!resp.ok) {
+    throw new Error(`Serper HTTP ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const organic: SerperResult[] = data.organic || [];
+
+  return organic.map((r) => ({
+    title: r.title ?? "",
+    href: r.link ?? "",
+    snippet: r.snippet ?? "",
+  }));
+}
+
+// Batch search: runs all non-Blackbird queries via Serper API in parallel
 export async function batchSearch(
   name: string
 ): Promise<Map<string, SearchResponse>> {
   const nonBlackbird = PLATFORMS.filter((p) => p.name !== "Blackbird");
-  const queries = nonBlackbird.map(
-    (p) => `"${name}" ${p.searchQuery}`
-  );
-
   const resultMap = new Map<string, SearchResponse>();
 
   // Initialize all as blocked (fallback)
@@ -78,37 +106,24 @@ export async function batchSearch(
     resultMap.set(p.name, { results: [], blocked: true });
   }
 
-  const bridgePath = path.join(process.cwd(), "lib", "search_bridge.py");
-
-  try {
-    const { stdout } = await execFileAsync(
-      "python3",
-      [bridgePath, "--batch", JSON.stringify(queries)],
-      { timeout: 45000, maxBuffer: 2 * 1024 * 1024 }
-    );
-
-    const batchResults: Array<{
-      query: string;
-      results: Array<{ title?: string; href?: string; body?: string }>;
-      error: string | null;
-    }> = JSON.parse(stdout.trim());
-
-    for (let i = 0; i < nonBlackbird.length; i++) {
-      const platform = nonBlackbird[i];
-      const data = batchResults[i];
-      if (data && !data.error) {
-        resultMap.set(platform.name, {
-          results: (data.results || []).map((r) => ({
-            title: r.title ?? "",
-            href: r.href ?? "",
-            snippet: r.body ?? "",
-          })),
-          blocked: false,
-        });
-      }
+  // Run all searches in parallel
+  const searchPromises = nonBlackbird.map(async (platform) => {
+    const query = `"${name}" ${platform.searchQuery}`;
+    try {
+      const results = await serperSearch(query);
+      return { platform: platform.name, results, blocked: false };
+    } catch {
+      return { platform: platform.name, results: [] as SearchResult[], blocked: true };
     }
-  } catch {
-    // All searches stay as blocked
+  });
+
+  const searchResults = await Promise.all(searchPromises);
+
+  for (const sr of searchResults) {
+    resultMap.set(sr.platform, {
+      results: sr.results,
+      blocked: sr.blocked,
+    });
   }
 
   return resultMap;

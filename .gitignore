@@ -42,6 +42,9 @@ __pycache__/
 .venv/
 sightings.db
 
+# app database
+eatdiscounted.db
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
