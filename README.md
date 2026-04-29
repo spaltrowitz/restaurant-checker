@@ -109,3 +109,8 @@ Blackbird, Seated, Upside, and Nea serve **different offers to different users**
 
 ### Freshness
 Restaurant listings change frequently — a restaurant on Seated today might not be there next week, and discount percentages shift constantly. The sightings database tracks *when* you last verified a listing so you know if your data is still reliable.
+
+---
+
+🍽️ [Share the savings](https://spaltrowitz.github.io/#support)
+
