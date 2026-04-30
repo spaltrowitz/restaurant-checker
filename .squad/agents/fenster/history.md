@@ -32,3 +32,11 @@
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+### 2026-04-30 — Backend hardening (caching, rate limiting, secrets)
+
+- **Response caching:** Google CSE results are now cached in-memory by normalized `restaurant::platform` key with 1-hour TTL. Blackbird sitemap is cached with 5-minute TTL. This should multiply effective Google CSE capacity 10-50x for repeated queries. Cache is a simple Map with timestamp expiry — no external deps.
+- **Rate limiting:** In-memory per-IP rate limiter added to all three API routes (`/api/check`: 5/min, `/api/report`: 10/min, `/api/reports`: 20/min). Returns 429 with `Retry-After` header. Expired entries cleaned every 60s to prevent memory leaks. No external deps.
+- **Secrets:** `.env.local` was already covered by `.env*` in `.gitignore` and was not tracked by git. No action needed — the original `.gitignore` was set up correctly.
+- **Dead code:** Removed `RATE_LIMIT_DELAY` constant from `platforms.ts` — it was unused in the TypeScript codebase (only referenced in Python CLI and squad docs, which don't import from there).
+- **Key constraint:** All caching is in-memory (process-scoped). Cache is lost on deploy/restart. This is fine for the current single-process model but won't survive serverless cold starts. If we move to Vercel serverless, we'd need Redis or similar.

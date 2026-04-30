@@ -63,7 +63,7 @@ export const PLATFORMS: Platform[] = [
     personalized: false,
     cardLink: false,
     cardConflict: false,
-    searchQuery: "site:inkind.com",
+    searchQuery: "",
     domainFilter: "inkind.com",
   },
   {
@@ -78,7 +78,7 @@ export const PLATFORMS: Platform[] = [
     personalized: true,
     cardLink: true,
     cardConflict: true,
-    searchQuery: "site:upside.com",
+    searchQuery: "",
     domainFilter: "upside.com",
   },
   {
@@ -93,7 +93,7 @@ export const PLATFORMS: Platform[] = [
     personalized: true,
     cardLink: true,
     cardConflict: true,
-    searchQuery: "(site:seatedapp.io OR site:getseated.com)",
+    searchQuery: "",
     domainFilter: "seated",
   },
   {
@@ -108,7 +108,7 @@ export const PLATFORMS: Platform[] = [
     personalized: true,
     cardLink: true,
     cardConflict: true,
-    searchQuery: "site:neaapp.ai",
+    searchQuery: "",
     domainFilter: "neaapp.ai",
   },
   {
@@ -123,7 +123,7 @@ export const PLATFORMS: Platform[] = [
     personalized: false,
     cardLink: true,
     cardConflict: false,
-    searchQuery: "site:biltrewards.com dining",
+    searchQuery: "dining",
     domainFilter: "biltrewards.com",
   },
   {
@@ -138,7 +138,7 @@ export const PLATFORMS: Platform[] = [
     personalized: false,
     cardLink: true,
     cardConflict: false,
-    searchQuery: "site:rakuten.com/dining OR site:rakuten.com/food",
+    searchQuery: "dining",
     domainFilter: "rakuten.com",
   },
   {
@@ -152,7 +152,7 @@ export const PLATFORMS: Platform[] = [
     personalized: false,
     cardLink: false,
     cardConflict: false,
-    searchQuery: "site:toogoodtogo.com",
+    searchQuery: "",
     domainFilter: "toogoodtogo.com",
   },
 ];
@@ -160,8 +160,6 @@ export const PLATFORMS: Platform[] = [
 export const CARD_CONFLICT_GROUPS: string[][] = [
   ["Seated", "Upside", "Nea"],
 ];
-
-export const RATE_LIMIT_DELAY = 2000;
 
 export function getConflictingPlatforms(platformName: string): string[] {
   for (const group of CARD_CONFLICT_GROUPS) {

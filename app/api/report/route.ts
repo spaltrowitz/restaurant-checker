@@ -1,9 +1,13 @@
 import { addReport } from "@/lib/db";
 import { headers } from "next/headers";
+import { rateLimit, REPORT_LIMIT } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, "/api/report", REPORT_LIMIT);
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const { restaurant, platform } = body;

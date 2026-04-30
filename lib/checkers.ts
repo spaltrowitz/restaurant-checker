@@ -1,20 +1,58 @@
 import { Platform, CheckResult, PLATFORMS } from "./platforms";
 import { matchesRestaurant } from "./matching";
 
+// --- In-memory cache ---
+type CacheEntry<T> = { data: T; expiresAt: number };
+
+const searchCache = new Map<string, CacheEntry<SearchResult[]>>();
+const SEARCH_CACHE_TTL = 3_600_000; // 1 hour
+
+let blackbirdSitemapCache: CacheEntry<string[]> | null = null;
+const SITEMAP_CACHE_TTL = 300_000; // 5 minutes
+
+function normalizeKey(restaurant: string, platform: string): string {
+  return `${restaurant.toLowerCase().trim()}::${platform.toLowerCase().trim()}`;
+}
+
+function getSearchCache(key: string): SearchResult[] | null {
+  const entry = searchCache.get(key);
+  if (!entry) return null;
+  if (Date.now() >= entry.expiresAt) {
+    searchCache.delete(key);
+    return null;
+  }
+  console.log(`[cache] HIT search: ${key}`);
+  return entry.data;
+}
+
+function setSearchCache(key: string, data: SearchResult[]): void {
+  searchCache.set(key, { data, expiresAt: Date.now() + SEARCH_CACHE_TTL });
+}
+
+async function getBlackbirdSpots(): Promise<string[]> {
+  if (blackbirdSitemapCache && Date.now() < blackbirdSitemapCache.expiresAt) {
+    console.log("[cache] HIT blackbird sitemap");
+    return blackbirdSitemapCache.data;
+  }
+  console.log("[cache] MISS blackbird sitemap — fetching");
+  const resp = await fetch("https://www.blackbird.xyz/sm.xml", {
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const xml = await resp.text();
+  const spots = [
+    ...xml.matchAll(
+      /<loc>(https:\/\/www\.blackbird\.xyz\/spots\/[^<]+)<\/loc>/g
+    ),
+  ].map((m) => m[1]);
+  blackbirdSitemapCache = { data: spots, expiresAt: Date.now() + SITEMAP_CACHE_TTL };
+  return spots;
+}
+
 export async function checkBlackbird(name: string): Promise<CheckResult> {
   const platform = PLATFORMS.find((p) => p.name === "Blackbird")!;
   try {
-    const resp = await fetch("https://www.blackbird.xyz/sm.xml", {
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const xml = await resp.text();
-
-    const spots = [
-      ...xml.matchAll(
-        /<loc>(https:\/\/www\.blackbird\.xyz\/spots\/[^<]+)<\/loc>/g
-      ),
-    ].map((m) => m[1]);
+    const spots = await getBlackbirdSpots();
 
     const found = spots.filter((url) => {
       const slug = url.split("/spots/")[1]?.replace(/-/g, " ") ?? "";
@@ -108,11 +146,21 @@ export async function batchSearch(
     resultMap.set(p.name, { results: [], blocked: true });
   }
 
-  // Run all searches in parallel
+  // Run all searches in parallel, using cache when available
   const searchPromises = nonBlackbird.map(async (platform) => {
-    const query = `"${name}" ${platform.searchQuery}`;
+    const cacheKey = normalizeKey(name, platform.name);
+    const cached = getSearchCache(cacheKey);
+    if (cached !== null) {
+      return { platform: platform.name, results: cached, blocked: false };
+    }
+
+    console.log(`[cache] MISS search: ${cacheKey}`);
+    const query = platform.searchQuery
+      ? `"${name}" ${platform.searchQuery}`
+      : `"${name}"`;
     try {
       const results = await googleCSESearch(query);
+      setSearchCache(cacheKey, results);
       return { platform: platform.name, results, blocked: false };
     } catch {
       return { platform: platform.name, results: [] as SearchResult[], blocked: true };

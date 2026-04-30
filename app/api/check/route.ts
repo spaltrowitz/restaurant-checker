@@ -4,10 +4,14 @@ import {
   batchSearch,
   evaluateSearchResults,
 } from "@/lib/checkers";
+import { rateLimit, CHECK_LIMIT } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
+  const limited = rateLimit(request, "/api/check", CHECK_LIMIT);
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim();
 
