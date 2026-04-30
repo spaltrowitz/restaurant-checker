@@ -57,44 +57,46 @@ type SearchResponse = {
   blocked: boolean;
 };
 
-interface SerperResult {
-  title?: string;
-  link?: string;
-  snippet?: string;
-}
+// Search via Google Custom Search JSON API (100 free queries/day)
+async function googleCSESearch(query: string): Promise<SearchResult[]> {
+  const apiKey = process.env.GOOGLE_CSE_API_KEY;
+  const cx = process.env.GOOGLE_CSE_ID;
 
-// Search via Serper.dev Google Search API
-async function serperSearch(query: string): Promise<SearchResult[]> {
-  const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey || apiKey === "your_api_key_here") {
-    throw new Error("SERPER_API_KEY not configured");
+    throw new Error("GOOGLE_CSE_API_KEY not configured");
+  }
+  if (!cx || cx === "your_cse_id_here") {
+    throw new Error("GOOGLE_CSE_ID not configured");
   }
 
-  const resp = await fetch("https://google.serper.dev/search", {
-    method: "POST",
-    headers: {
-      "X-API-KEY": apiKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ q: query, num: 10 }),
-    signal: AbortSignal.timeout(10000),
+  const params = new URLSearchParams({
+    key: apiKey,
+    cx,
+    q: query,
+    num: "10",
   });
 
+  const resp = await fetch(
+    `https://www.googleapis.com/customsearch/v1?${params}`,
+    { signal: AbortSignal.timeout(10000) }
+  );
+
   if (!resp.ok) {
-    throw new Error(`Serper HTTP ${resp.status}`);
+    throw new Error(`Google CSE HTTP ${resp.status}`);
   }
 
   const data = await resp.json();
-  const organic: SerperResult[] = data.organic || [];
+  const items: Array<{ title?: string; link?: string; snippet?: string }> =
+    data.items || [];
 
-  return organic.map((r) => ({
+  return items.map((r) => ({
     title: r.title ?? "",
     href: r.link ?? "",
     snippet: r.snippet ?? "",
   }));
 }
 
-// Batch search: runs all non-Blackbird queries via Serper API in parallel
+// Batch search: runs all non-Blackbird queries via Google CSE in parallel
 export async function batchSearch(
   name: string
 ): Promise<Map<string, SearchResponse>> {
@@ -110,7 +112,7 @@ export async function batchSearch(
   const searchPromises = nonBlackbird.map(async (platform) => {
     const query = `"${name}" ${platform.searchQuery}`;
     try {
-      const results = await serperSearch(query);
+      const results = await googleCSESearch(query);
       return { platform: platform.name, results, blocked: false };
     } catch {
       return { platform: platform.name, results: [] as SearchResult[], blocked: true };
