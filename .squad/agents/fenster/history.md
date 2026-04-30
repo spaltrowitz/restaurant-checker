@@ -72,3 +72,13 @@
 - **slugVariants wired in:** `slugVariants()` is now used in `checkBlackbird` to match URL slugs directly (e.g. "the-smith-nomad" matching "The Smith Nomad"). No longer dead code.
 - **Data corrections:** Rakuten Dining `appOnly` → false (has web UI). Seated `domainFilter` → "seatedapp.io" (was too loose at "seated"). Blackbird `cardLink` annotated as NFC/QR.
 - **Tests:** All 38 pass. Updated 1 test expectation for word-boundary behavior ("Bo" no longer matches "robot").
+
+### 2026-04-30 DuckDuckGo Fallback for Google CSE Failures
+- **Problem:** Google CSE returns 403 due to Cloud project misconfiguration. App completely non-functional without it.
+- **Solution:** Added `duckDuckGoSearch()` function that scrapes `html.duckduckgo.com/html/` and parses result titles, URLs, and snippets. `batchSearch()` now probes Google CSE with the first platform — if it fails (any error), all platforms fall back to DuckDuckGo sequentially with 2-second delays between requests.
+- **DuckDuckGo parsing:** Splits on `result__body` class, extracts `result__a` href (unwraps DDG redirect via `uddg=` param), title text, and `result__snippet` content. HTML entities decoded. Caps at 10 results.
+- **Caching:** DDG results cached identically to CSE results (same key, same TTL). Cache doesn't care which engine produced the data.
+- **Logging:** `[search]` prefix logs which engine is active. `[duckduckgo]` prefix for per-platform DDG results. Existing `[google-cse]` logging unchanged.
+- **Trade-off:** DDG fallback is sequential (not parallel) to respect rate limits. ~14 seconds for 7 platforms vs ~2s parallel with CSE. Acceptable since it only activates when CSE is broken.
+- **Tests:** 38/38 pass, TypeScript compiles clean, Next.js build green.
+- **Orchestration:** Documented in `.squad/orchestration-log/2026-04-30T19-36-30Z-fenster.md` and `.squad/log/2026-04-30T19-36-30Z-ddg-fallback.md`. Decisions archived in `.squad/decisions.md`.

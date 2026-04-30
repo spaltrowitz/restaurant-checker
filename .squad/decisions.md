@@ -81,6 +81,23 @@
 - **#4 Data corrections:** Rakuten `appOnly` → false, Seated `domainFilter` → "seatedapp.io", Blackbird `cardLink` annotated as NFC/QR.
 - **Trade-off:** Word-boundary matching is slightly stricter — restaurant names that are substrings of other words no longer match (desired behavior). `site:` scopes to one domain per platform.
 
+### Enable Custom Search JSON API in Google Cloud Console
+**Author:** Fenster | **Date:** 2026-04-30 | **Status:** Action Required (Shari)
+
+- Google Cloud project missing Custom Search JSON API activation (403 PERMISSION_DENIED on all CSE requests).
+- Root cause: Not a code issue. Action: Enable API in [Google Cloud Console](https://console.cloud.google.com/apis/library/customsearch.googleapis.com), then re-test.
+- Fallback implemented in `lib/checkers.ts`: structured error parsing, retry without `site:` operator if needed.
+- Trade-off: Fallback doubles API calls on failure; once API enabled, only fires if `site:`-specific rejection.
+
+### DuckDuckGo HTML Scraping Fallback
+**Author:** Fenster | **Date:** 2026-04-30 | **Status:** Implemented
+
+- Google CSE unavailable due to API enablement issue. Added DDG HTML scraping fallback.
+- Strategy: `batchSearch()` probes Google CSE first; if fails, ALL platforms fall back to DDG sequentially.
+- DDG uses `html.duckduckgo.com/html/` with same query format (`"name" site:domain`), 2s rate-limit delays.
+- Results cached identically — downstream code unaware of which engine. Google CSE still preferred when available.
+- Trade-off: DDG fallback sequential (~14s/7 platforms vs ~2s parallel), HTML scraping fragile, DDG may rate-limit.
+
 ## Governance
 
 - All meaningful changes require team consensus
