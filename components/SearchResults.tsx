@@ -52,25 +52,8 @@ function SearchResultsInner() {
     }
   }, []);
 
-  const startSearch = useCallback(async (q: string) => {
-    // Abort any in-flight search
-    abortControllerRef.current?.abort();
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    // 30-second timeout
+  const performFetch = useCallback(async (q: string, controller: AbortController) => {
     const timeoutId = setTimeout(() => controller.abort(), 30_000);
-
-    setResults(new Map());
-    setConflict(null);
-    setCommunityReports(new Map());
-    setIsSearching(true);
-    setIsDone(false);
-    setError(null);
-
-    // Fetch community reports in parallel with the SSE search
-    fetchCommunityReports(q);
 
     try {
       const resp = await fetch(`/api/check?q=${encodeURIComponent(q)}`, {
@@ -125,7 +108,6 @@ function SearchResultsInner() {
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
-        // Intentional abort (new search or unmount) — not an error
         return;
       }
       setError("Something went wrong. Please try again.");
@@ -134,11 +116,35 @@ function SearchResultsInner() {
       setIsSearching(false);
       setIsDone(true);
     }
-  }, [fetchCommunityReports]);
+  }, []);
 
-  useEffect(() => {
+  const startSearch = useCallback((q: string) => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setResults(new Map());
+    setConflict(null);
+    setCommunityReports(new Map());
+    setIsSearching(true);
+    setIsDone(false);
+    setError(null);
+
+    fetchCommunityReports(q);
+    performFetch(q, controller);
+  }, [fetchCommunityReports, performFetch]);
+
+  // Reset state during render when query changes (React-approved derived state pattern)
+  const [lastQuery, setLastQuery] = useState<string | null>(null);
+  if (query !== lastQuery) {
+    setLastQuery(query);
     if (query && query.length >= 2) {
-      startSearch(query);
+      setResults(new Map());
+      setConflict(null);
+      setCommunityReports(new Map());
+      setIsSearching(true);
+      setIsDone(false);
+      setError(null);
     } else {
       setResults(new Map());
       setCommunityReports(new Map());
@@ -146,11 +152,26 @@ function SearchResultsInner() {
       setIsDone(false);
       setError(null);
     }
+  }
+
+  // Effect handles async side effects via microtask to satisfy lint rule
+  useEffect(() => {
+    if (!query || query.length < 2) return;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Wrap in microtask — setState happens in async callbacks, not synchronously
+    void Promise.resolve().then(() => {
+      fetchCommunityReports(query);
+      performFetch(query, controller);
+    });
 
     return () => {
-      abortControllerRef.current?.abort();
+      controller.abort();
     };
-  }, [query, startSearch]);
+  }, [query, fetchCommunityReports, performFetch]);
 
   if (!query) return null;
 

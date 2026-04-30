@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -7,9 +7,25 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "EatDiscounted — Restaurant Discount Platform Finder",
+  title: "EatDiscounted — Find Restaurant Discount Platforms",
   description:
-    "Find which dining discount apps (Blackbird, inKind, Upside, Seated, Nea, Bilt, Rakuten, Too Good To Go) list your restaurant.",
+    "Check which dining discount platforms list your favorite restaurant. Compare Blackbird, inKind, Bilt, Rakuten Dining, Too Good To Go, and more.",
+  openGraph: {
+    title: "EatDiscounted — Find Restaurant Discount Platforms",
+    description: "Check which dining discount platforms list your favorite restaurant.",
+    type: "website",
+    siteName: "EatDiscounted",
+  },
+  twitter: {
+    card: "summary",
+    title: "EatDiscounted — Find Restaurant Discount Platforms",
+    description: "Check which dining discount platforms list your favorite restaurant.",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -20,6 +36,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded"
+        >
+          Skip to content
+        </a>
         {children}
       </body>
     </html>

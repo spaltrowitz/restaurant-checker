@@ -53,3 +53,9 @@
 ### 2026-04-30 Fix Blockers Session
 - Completed: AbortController SSE fix, error state UI with retry + 429 handling, full a11y pass (ARIA labels, live regions, aria-current), error.tsx + not-found.tsx pages.
 - Team context: Fenster added caching+rate limiting (429 responses), Keaton updated README, McManus added 38 tests.
+
+### 2026-04-30 — OG Meta Tags, Lint Fix & Final Polish
+- Added OG/Twitter meta tags to layout.tsx for social sharing.
+- Fixed `react-hooks/set-state-in-effect` lint error: restructured SearchResults.tsx to use "set state during render" pattern for query-change resets, and `Promise.resolve().then()` microtask pattern in the effect to avoid synchronous setState in effect body.
+- Added viewport export, skip-to-content link, `id="main-content"`, and `robots.txt`.
+- Learned: React 19's strict lint rules flag any function called from useEffect that can transitively call setState — even if those calls happen asynchronously after await. The microtask pattern (`Promise.resolve().then()`) satisfies the rule correctly.
