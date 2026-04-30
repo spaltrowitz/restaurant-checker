@@ -134,6 +134,15 @@ FRESH_DAYS = 7       # ≤7 days = fresh
 STALE_DAYS = 30      # ≤30 days = may have changed
                      # >30 days = likely outdated
 
+# Fuzzy-match tuning for matches_restaurant().
+# Applied only when the candidate text has at most this many extra words versus
+# the restaurant name (i.e. slug-like strings, not long search snippets).
+FUZZY_MATCH_MAX_EXTRA_WORDS = 3
+# Minimum SequenceMatcher ratio to count as a match (0–1). 0.82 was chosen to
+# tolerate minor slug variations (e.g. "lartusi" ≈ "l artusi") while rejecting
+# clearly different names.
+FUZZY_MATCH_THRESHOLD = 0.82
+
 
 # ---------------------------------------------------------------------------
 # Data types
@@ -277,8 +286,8 @@ def matches_restaurant(text: str, name: str) -> bool:
     # is close to the restaurant name length (e.g. Blackbird URL slugs).
     n_words = n2.split()
     t_words = t2.split()
-    if n_words and len(t_words) <= len(n_words) + 3:
-        if difflib.SequenceMatcher(None, n2, t2).ratio() >= 0.82:
+    if n_words and len(t_words) <= len(n_words) + FUZZY_MATCH_MAX_EXTRA_WORDS:
+        if difflib.SequenceMatcher(None, n2, t2).ratio() >= FUZZY_MATCH_THRESHOLD:
             return True
     return False
 
