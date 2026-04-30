@@ -59,3 +59,6 @@
 - Fixed `react-hooks/set-state-in-effect` lint error: restructured SearchResults.tsx to use "set state during render" pattern for query-change resets, and `Promise.resolve().then()` microtask pattern in the effect to avoid synchronous setState in effect body.
 - Added viewport export, skip-to-content link, `id="main-content"`, and `robots.txt`.
 - Learned: React 19's strict lint rules flag any function called from useEffect that can transitively call setState — even if those calls happen asynchronously after await. The microtask pattern (`Promise.resolve().then()`) satisfies the rule correctly.
+
+📌 Team update (2026-04-30T18:34): UX priority — Verbal proposes sort results by signal (found→manual→not-found), celebration moment above results grid, collapse not-found cards. Affects SearchResults.tsx and ResultCard.tsx.
+📌 Team update (2026-04-30T18:34): Product roadmap — Kobayashi proposes permalinks (/r/carbone). Will need new page route + shareable OG tags per restaurant.

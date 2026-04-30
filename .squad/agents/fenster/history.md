@@ -50,6 +50,9 @@
 - Authored Fly.io Deployment Configuration decision (persistent volume SQLite, auto-stop, secrets via `fly secrets`).
 - Team context: Keaton committed full sprint (43cadba) and pushed to spaltrowitz/add-nextjs-web-ui.
 
+📌 Team update (2026-04-30T18:34): Platform accuracy — Redfoot proposes site: operator in CSE queries, word-boundary matching, data corrections (Rakuten appOnly→false, Seated domain→seatedapp.io). Affects search.ts and platforms.ts.
+📌 Team update (2026-04-30T18:34): Product roadmap — Kobayashi proposes restaurant permalinks (P0). May need new API route + caching strategy.
+
 ### 2026-04-30 Unicode Transliteration & Structured Logging
 - **Unicode fix:** `norm()` now uses NFD decomposition + combining-mark stripping before ASCII filter. Handles ß→ss, æ→ae, œ→oe as special cases. "Café Boulud" → "cafe boulud" instead of "caf boulud".
 - **Structured logging:** Added `console.error`/`console.warn` with bracketed prefixes (`[blackbird]`, `[google-cse]`, `[api/check]`, `[rate-limit]`) to all catch blocks and error paths. Grep-friendly, no deps.

@@ -42,3 +42,11 @@
 - Moved Python CLI to `cli/` directory, updated README paths accordingly.
 - Committed full sprint work (43cadba), pushed to `spaltrowitz/add-nextjs-web-ui`.
 - Team context: Fenster verified Fly.io deployment config already in place.
+
+### 2026-04-30 Post-Sprint Health Check
+- Build/test/lint all green. 2 unpushed commits ahead of origin. No breakage.
+- Action items: push commits, fix unused CheckResult import in matching.test.ts.
+
+📌 Team update (2026-04-30T18:34): UX priority — sort results by signal, add celebration moment, collapse not-found cards — proposed by Verbal
+📌 Team update (2026-04-30T18:34): Product roadmap — permalinks (P0), saved restaurants + alerts (P1), deals-near-me (P2) — proposed by Kobayashi
+📌 Team update (2026-04-30T18:34): Platform accuracy — add site: to CSE, word-boundary matching, 3 data corrections, slugVariants dead code — proposed by Redfoot

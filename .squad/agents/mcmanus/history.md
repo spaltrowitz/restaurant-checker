@@ -61,3 +61,5 @@
 ### 2026-04-30 Fix Blockers Session
 - Completed: Vitest framework setup, 38 tests for matching.ts + evaluateSearchResults, 3 Unicode bugs documented as known issues.
 - Team context: Fenster added caching+rate limiting, Hockney fixed SSE+a11y+error pages, Keaton updated README.
+
+📌 Team update (2026-04-30T18:34): Platform accuracy — Redfoot identified slugVariants() as dead code (defined+tested, never called). Also proposes word-boundary matching which would change matchesRestaurant() behavior — tests will need updating.
