@@ -59,3 +59,10 @@
 - **API route hardening:** Wrapped SSE stream body in try/catch so unhandled errors don't crash without logging.
 - **Tests:** All 38 tests pass. Updated 2 test expectations from "documents broken behavior" to "verifies correct behavior".
 - **Key constraint:** CJK/Cyrillic still normalize to empty string — acceptable for NYC Latin-script focus.
+
+### 2026-04-30 Platform Accuracy Improvements (Redfoot's Review)
+- **Word-boundary matching:** `matchesRestaurant` now uses `\b` regex instead of bare `includes()`. Prevents "robot" matching "Bo" and "blacksmith" matching "The Smith". Full-name check also uses boundaries. Regex special chars escaped.
+- **site: operator in CSE:** Search queries now include `site:{domainFilter}` when a platform has a domain filter. Eliminates blog/review noise from results. Example: `"Carbone" site:inkind.com`.
+- **slugVariants wired in:** `slugVariants()` is now used in `checkBlackbird` to match URL slugs directly (e.g. "the-smith-nomad" matching "The Smith Nomad"). No longer dead code.
+- **Data corrections:** Rakuten Dining `appOnly` → false (has web UI). Seated `domainFilter` → "seatedapp.io" (was too loose at "seated"). Blackbird `cardLink` annotated as NFC/QR.
+- **Tests:** All 38 pass. Updated 1 test expectation for word-boundary behavior ("Bo" no longer matches "robot").

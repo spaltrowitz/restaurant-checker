@@ -54,12 +54,12 @@
 - Action items: push commits, fix unused CheckResult import, consider adding .squad/templates/ to .eslintignore.
 
 ### UX Priority: Sort by Signal, Celebration Moment, Collapse Not-Found
-**Author:** Verbal (Designer) | **Date:** 2026-04-30 | **Status:** Proposed
+**Author:** Verbal (Designer) → Hockney (impl) | **Date:** 2026-04-30 | **Status:** Implemented
 
-- **#1 Sort results by signal:** Reorder results so ✅ found appears first, 🔗 manual-check second, ❌ not-found last. Add `transition-all` for smooth reordering.
-- **#2 Celebration moment:** When results finish, show summary card: "🎉 Found on 3 platforms — you could save with Blackbird, inKind, and Bilt!" with action links. For zero results: "No platforms found yet. Be the first to report one!"
-- **#3 Collapse not-found:** After streaming completes, collapse ❌ cards into compact row: "Not found on: Upside, Nea, Rakuten Dining" — expandable for details. Reduces scroll depth ~50% on mobile.
-- Rationale: "Finding deals should feel like winning, not reading a status report." Transforms utility into something people enjoy using at the dinner table.
+- **#1 Sort results by signal:** Results render found first, manual-check second, not-found last. Immediate visibility of wins.
+- **#2 Celebration summary card:** Post-stream card with green gradient when deals found (includes platform names + inline conflict warnings). Gray fallback for zero results.
+- **#3 Collapse not-found:** After streaming, not-found cards collapse to compact pill list with expandable details. ~50% scroll reduction on mobile. During streaming, cards still show individually for real-time feedback.
+- **Trade-off:** ConflictWarning component no longer rendered separately (merged into summary card). Sort uses `.includes()` on small arrays (8 platforms max).
 
 ### Product Roadmap: Permalinks → Saved Restaurants → Deals-Near-Me
 **Author:** Kobayashi (PM) | **Date:** 2026-04-30 | **Status:** Proposed
@@ -73,15 +73,13 @@
 - **Monetization:** Start with affiliate links (Blackbird, inKind, Bilt referral programs). Passive, $0 UX cost.
 
 ### Platform Accuracy: site: Operator, Word-Boundary Matching, Data Corrections
-**Author:** Redfoot (Platform SME) | **Date:** 2026-04-30 | **Status:** Proposed
+**Author:** Redfoot (Platform SME) → Fenster (impl) | **Date:** 2026-04-30 | **Status:** Implemented
 
-- **#1 Use `site:` operator in CSE queries:** Change from broad search + domain filtering to `"Carbone" site:inkind.com`. Eliminates most false positives, improves accuracy from ~70% to ~90%+. Alternatively, create separate CSE engines per platform (100 queries/day each for free).
-- **#2 Word-boundary matching:** Replace `t.includes(n)` with `\b`-based regex in `matchesRestaurant`. Prevents "robot" matching "Bo" and "blacksmith" matching "The Smith". For names ≤4 chars, require exact word-boundary match only.
-- **#3 Data corrections:**
-  - `Rakuten Dining.appOnly` → `false` (can be registered/managed via web at rakuten.com/dining)
-  - `Seated.domainFilter` → `"seatedapp.io"` (current "seated" is too loose, matches unrelated URLs)
-  - `Blackbird.cardLink` → add comment that it's NFC/QR, not traditional card-linking
-- **Dead code:** `slugVariants()` is defined and tested but never called in checker logic. Either use it in `checkBlackbird` or remove it.
+- **#1 `site:` operator in CSE queries:** Queries now include `site:{domainFilter}` (e.g. `"Carbone" site:inkind.com`). Eliminates blog/review noise from results.
+- **#2 Word-boundary matching:** `matchesRestaurant` uses `\b` regex with fast `includes()` pre-check. Prevents "robot" matching "Bo" and "blacksmith" matching "The Smith". Regex special chars escaped.
+- **#3 `slugVariants` wired in:** Now used in `checkBlackbird` for URL slug matching. No longer dead code.
+- **#4 Data corrections:** Rakuten `appOnly` → false, Seated `domainFilter` → "seatedapp.io", Blackbird `cardLink` annotated as NFC/QR.
+- **Trade-off:** Word-boundary matching is slightly stricter — restaurant names that are substrings of other words no longer match (desired behavior). `site:` scopes to one domain per platform.
 
 ## Governance
 

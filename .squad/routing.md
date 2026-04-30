@@ -12,6 +12,9 @@ How to decide who handles what.
 | Code review | Keaton | Review PRs, check quality, suggest improvements |
 | Testing | McManus | Write tests, find edge cases, verify fixes |
 | Scope & priorities | Keaton | What to build next, trade-offs, decisions |
+| UX & design | Verbal | UI critique, user flows, layout, design direction |
+| Product strategy | Kobayashi | Feature prioritization, user stories, positioning, competitive analysis |
+| Platform expertise | Redfoot | Dining platform analysis, restaurant matching, data quality, competitive intel |
 | Session logging | Scribe | Automatic — never needs routing |
 
 ## Issue Routing

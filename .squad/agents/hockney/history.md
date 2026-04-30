@@ -62,3 +62,15 @@
 
 📌 Team update (2026-04-30T18:34): UX priority — Verbal proposes sort results by signal (found→manual→not-found), celebration moment above results grid, collapse not-found cards. Affects SearchResults.tsx and ResultCard.tsx.
 📌 Team update (2026-04-30T18:34): Product roadmap — Kobayashi proposes permalinks (/r/carbone). Will need new page route + shareable OG tags per restaurant.
+
+### 2026-04-30 — Verbal's UX Improvements (Sort, Celebrate, Collapse)
+
+**What I did:**
+1. **Sort by signal:** Results now render found (green) first, manual-check (amber) second, not-found last. Uses a sort on the PLATFORMS array based on categorized result status.
+2. **Celebration summary card:** When streaming finishes, a prominent summary card appears at top — green gradient with platform names if deals found, gray with helpful fallback if zero. Card conflict warning is merged inline into this card (no longer separate).
+3. **Collapse not-found:** After streaming completes, not-found platforms collapse into a single compact line ("Not found on: X, Y, Z") with an expandable "Show details" toggle. During streaming, cards still show individually for real-time feedback.
+
+**What I learned:**
+- Keeping streaming UX intact while adding post-stream collapse requires conditional rendering per `isDone` state — show full cards while streaming, collapse only after.
+- The ConflictWarning component import became unused after merging conflict info into the summary card — removed to keep lint clean.
+- Sorting a rendered list by dynamic state while preserving React keys works fine with `.slice().sort()` on the platform array.
