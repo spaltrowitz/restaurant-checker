@@ -53,14 +53,25 @@ components/
   Nav.tsx               Navigation bar
 ```
 
+## Deployment (Fly.io)
+
+1. Install the Fly CLI: `curl -L https://fly.io/install.sh | sh`
+2. Authenticate: `fly auth login`
+3. Launch: `fly launch` (uses existing fly.toml)
+4. Create a volume for SQLite: `fly volumes create data --size 1 --region ewr`
+5. Set secrets: `fly secrets set GOOGLE_CSE_API_KEY=your_key GOOGLE_CSE_ID=your_id`
+6. Deploy: `fly deploy`
+
+The app uses SQLite with a persistent Fly volume mounted at `/data`. The database file lives at `/data/eatdiscounted.db`.
+
 ## CLI Tool
 
-The original Python CLI is also in this repo. See `restaurant_checker.py`.
+The original Python CLI is also in this repo. See `cli/restaurant_checker.py`.
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python restaurant_checker.py check "Carbone"
+pip install -r cli/requirements.txt
+python cli/restaurant_checker.py check "Carbone"
 ```
 
 ## Platforms (8)

@@ -3,7 +3,7 @@ import path from "path";
 import crypto from "crypto";
 import { PLATFORMS } from "./platforms";
 
-const DB_PATH = path.join(process.cwd(), "eatdiscounted.db");
+const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), "eatdiscounted.db");
 
 let _db: Database.Database | null = null;
 
