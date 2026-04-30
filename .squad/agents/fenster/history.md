@@ -60,6 +60,12 @@
 - **Tests:** All 38 tests pass. Updated 2 test expectations from "documents broken behavior" to "verifies correct behavior".
 - **Key constraint:** CJK/Cyrillic still normalize to empty string — acceptable for NYC Latin-script focus.
 
+### 2026-04-30 Google CSE Search Broken — Diagnosis & Fix
+- **Root cause:** NOT the `site:` operator or quota exhaustion. The Google Cloud project does not have the "Custom Search JSON API" enabled. Every request returns 403 PERMISSION_DENIED regardless of query format.
+- **Fix applied:** (1) Structured error parsing — distinguishes permission denied (403), quota exhausted (403 with "quota" reason), and rate limited (429). (2) Fallback strategy — if `site:`-scoped query fails, retries without `site:` before giving up. (3) Actionable log messages with query context.
+- **Action required (Shari):** Go to Google Cloud Console → APIs & Services → Enable "Custom Search JSON API" for the project associated with key `AIzaSyCa...`. The code is ready; it will work as soon as the API is enabled.
+- **Tests:** 38/38 pass, TypeScript compiles clean.
+
 ### 2026-04-30 Platform Accuracy Improvements (Redfoot's Review)
 - **Word-boundary matching:** `matchesRestaurant` now uses `\b` regex instead of bare `includes()`. Prevents "robot" matching "Bo" and "blacksmith" matching "The Smith". Full-name check also uses boundaries. Regex special chars escaped.
 - **site: operator in CSE:** Search queries now include `site:{domainFilter}` when a platform has a domain filter. Eliminates blog/review noise from results. Example: `"Carbone" site:inkind.com`.
