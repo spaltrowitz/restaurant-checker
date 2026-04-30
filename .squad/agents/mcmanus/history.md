@@ -43,3 +43,17 @@
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+### 2026-04-30 — Test Framework Setup & First Test Suite
+
+- **Vitest installed** as the test runner (`vitest run` / `vitest` watch mode). Config at `vitest.config.ts`.
+- **38 tests written** covering `norm()`, `slugVariants()`, `matchesRestaurant()`, and `evaluateSearchResults()`. All 38 pass.
+- **Known bugs documented in tests:**
+  - `norm()` strips accented chars instead of transliterating ("Café" → "caf", "résumé" → "rsum")
+  - `norm()` destroys CJK/Cyrillic entirely (→ ""), causing `matchesRestaurant()` to false-positive on any text
+  - `matchesRestaurant("any text", "寿司")` returns true because `"".includes("")` is true in JS
+- **Edge cases confirmed:**
+  - Words ≤2 chars filtered from word-match; short names like "Bo" only match as substrings
+  - `evaluateSearchResults` correctly skips /blog/, /help/, /faq/, /hc/en-us/, /retailer-blog/ URLs
+  - appOnly platforms get distinct "check the app" fallback messages
+- **Test file location:** `lib/__tests__/matching.test.ts`
