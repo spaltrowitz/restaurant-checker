@@ -74,18 +74,17 @@ export default function PlatformsPage() {
         </div>
 
         <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <p className="font-medium text-amber-800">⚠️ Card Conflict Note</p>
+          <p className="font-medium text-amber-800">⚠️ Card-Linked Note</p>
           <p className="mt-1 text-sm text-amber-700">
-            Seated, Upside, and Nea all require a linked debit/credit card and
-            block the same card from being used across competing apps. Link a
-            different card to each, or pick one cashback app per card.
+            Some platforms (Upside, Nea, Bilt, Rakuten Dining, Blackbird) require
+            linking a debit or credit card. Check each app for card requirements.
           </p>
         </div>
 
         <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
           <p className="font-medium text-blue-800">📝 Personalization Note</p>
           <p className="mt-1 text-sm text-blue-700">
-            Blackbird, Seated, Upside, and Nea serve personalized offers —
+            Blackbird, Upside, and Nea serve personalized offers —
             different users see different discounts at the same restaurant. This
             tool checks whether a restaurant is listed, not what specific
             discount you&apos;ll get.

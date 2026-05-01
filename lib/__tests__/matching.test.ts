@@ -272,9 +272,9 @@ describe("evaluateSearchResults()", () => {
 
   it("returns appOnly fallback when no results match on app-only platform", () => {
     const platform = makePlatform({
-      name: "Seated",
+      name: "Nea",
       appOnly: true,
-      domainFilter: "seated",
+      domainFilter: "neaapp.ai",
     });
     const result = evaluateSearchResults(platform, "Carbone", {
       results: [],

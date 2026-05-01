@@ -9,7 +9,7 @@ export default function AboutPage() {
 
         <div className="mt-6 space-y-4 text-gray-700 leading-relaxed">
           <p>
-            There are so many dining discount platforms now — Blackbird, Seated,
+            There are so many dining discount platforms now — Blackbird,
             Upside, Nea, inKind, Bilt, Rakuten Dining, Too Good To Go — and
             they all work differently. Points, cashback, credits, surprise bags.
             Some are personalized, some require a linked card, and some of them

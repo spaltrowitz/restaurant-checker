@@ -82,21 +82,6 @@ export const PLATFORMS: Platform[] = [
     domainFilter: "upside.com",
   },
   {
-    name: "Seated",
-    url: "https://seatedapp.io",
-    appOnly: true,
-    rewardType: "cashback",
-    rewardEmoji: "💵",
-    rewardLabel: "Cashback (up to 30%)",
-    offerType:
-      "Personalized: cashback % varies by user, time of day, day of week (up to 30%)",
-    personalized: true,
-    cardLink: true,
-    cardConflict: true,
-    searchQuery: "",
-    domainFilter: "seated",
-  },
-  {
     name: "Nea",
     url: "https://neaapp.ai",
     appOnly: true,
@@ -172,9 +157,7 @@ export const PLATFORMS: Platform[] = [
   },
 ];
 
-export const CARD_CONFLICT_GROUPS: string[][] = [
-  ["Seated", "Upside", "Nea"],
-];
+export const CARD_CONFLICT_GROUPS: string[][] = [];
 
 export function getConflictingPlatforms(platformName: string): string[] {
   for (const group of CARD_CONFLICT_GROUPS) {

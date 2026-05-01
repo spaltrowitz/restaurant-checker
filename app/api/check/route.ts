@@ -59,9 +59,12 @@ export async function GET(request: Request) {
         );
 
         // Stream Rewards Network result
-        if (rewardsNetworkResult.found) foundPlatforms.push("Rewards Network");
+        if (rewardsNetworkResult.found)
+          foundPlatforms.push("Rewards Network");
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify(rewardsNetworkResult)}\n\n`)
+          encoder.encode(
+            `data: ${JSON.stringify(rewardsNetworkResult)}\n\n`
+          )
         );
 
         // Stream remaining platform results

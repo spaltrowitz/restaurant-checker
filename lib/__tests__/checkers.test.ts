@@ -226,7 +226,6 @@ describe("batchSearch()", () => {
     // Should have results for all non-Blackbird, non-Upside, non-Bilt platforms
     const platformNames = [
       "inKind",
-      "Seated",
       "Nea",
       "Rakuten Dining",
       "Too Good To Go",
@@ -503,9 +502,9 @@ describe("evaluateSearchResults() with Brave Search results", () => {
 
   it("handles appOnly platforms when no results found", () => {
     const appOnlyPlatform = makePlatform({
-      name: "Seated",
+      name: "Nea",
       appOnly: true,
-      domainFilter: "seated",
+      domainFilter: "neaapp.ai",
     });
 
     const result = evaluateSearchResults(appOnlyPlatform, "Carbone", {

@@ -269,7 +269,7 @@ async function getRewardsNetworkMerchants(
     return rewardsNetworkCache.data;
   }
 
-  console.log(`[cache] MISS rewards network (${cacheKey}) — fetching`);
+  console.log("[cache] MISS rewards network — fetching");
 
   const params = new URLSearchParams({
     campaignCode: "aa-dining",
@@ -307,6 +307,7 @@ export async function checkRewardsNetwork(
 
     for (const m of merchants) {
       if (matchesRestaurant(m.name, name)) {
+        // Find the best earning rate from benefits array
         const rates = (m.benefits ?? [])
           .map((b) => parseInt(b.value, 10))
           .filter((v) => !isNaN(v) && v > 0);
