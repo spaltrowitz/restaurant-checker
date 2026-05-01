@@ -27,6 +27,7 @@ Compliance:
 
 import argparse
 import asyncio
+import json
 import os
 import re
 import sqlite3
@@ -39,6 +40,14 @@ from typing import Optional
 from urllib.parse import quote_plus
 
 import httpx
+
+# Load environment variables from .env.local (then .env as fallback)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env.local")
+    load_dotenv()  # .env as fallback, won't override existing vars
+except ImportError:
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -354,7 +363,7 @@ async def _search(platform: str, name: str, site_q: str,
     app_note = " (app-only — check the app for full results)" if PLATFORMS[platform]["app_only"] else ""
     query = f'"{name}" {site_q}'
 
-    for strategy in [_try_ddgs, _try_playwright, _try_curl]:
+    for strategy in [_try_brave, _try_ddgs, _try_playwright, _try_curl]:
         try:
             results = await strategy(query) if asyncio.iscoroutinefunction(strategy) \
                 else await asyncio.to_thread(strategy, query)
@@ -372,6 +381,33 @@ async def _search(platform: str, name: str, site_q: str,
 
     return CheckResult(platform, False, f"Not found via web search{app_note}",
                        "web_search", url)
+
+
+async def _try_brave(query: str) -> list[tuple]:
+    """Search via Brave Search API (requires BRAVE_SEARCH_API_KEY)."""
+    api_key = os.getenv("BRAVE_SEARCH_API_KEY")
+    if not api_key:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                "https://api.search.brave.com/res/v1/web/search",
+                params={"q": query, "count": 5},
+                headers={
+                    "Accept": "application/json",
+                    "Accept-Encoding": "gzip",
+                    "X-Subscription-Token": api_key,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            results = data.get("web", {}).get("results", [])
+            return [
+                (r.get("title", ""), r.get("url", ""), r.get("description", ""))
+                for r in results[:5]
+            ]
+    except Exception:
+        return []
 
 
 def _try_ddgs(query: str) -> list[tuple]:
