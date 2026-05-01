@@ -56,3 +56,6 @@ next-env.d.ts
 .squad/.scratch/
 # Squad: SubSquad activation file (local to this machine)
 .squad-workstream
+bilt-chunks/
+bilt-dining.html
+bilt-chunks.txt
