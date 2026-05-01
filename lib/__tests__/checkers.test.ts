@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { batchSearch, evaluateSearchResults } from "../checkers";
+import { batchSearch, evaluateSearchResults, titleMatchesRestaurant, isNoResultsPage } from "../checkers";
 import type { Platform } from "../platforms";
 
 // ─── Helper to build a minimal Platform for testing ───
@@ -534,8 +534,8 @@ describe("evaluateSearchResults() with Brave Search results", () => {
     });
     expect(titleMatch.found).toBe(true);
 
-    // Match in snippet
-    const snippetMatch = evaluateSearchResults(platform, "Carbone", {
+    // Name only in snippet (not in title) — now rejected by title filter
+    const snippetOnly = evaluateSearchResults(platform, "Carbone", {
       results: [
         {
           title: "Italian Restaurant",
@@ -545,10 +545,10 @@ describe("evaluateSearchResults() with Brave Search results", () => {
       ],
       blocked: false,
     });
-    expect(snippetMatch.found).toBe(true);
+    expect(snippetOnly.found).toBe(false);
 
-    // Match in URL
-    const urlMatch = evaluateSearchResults(platform, "Carbone", {
+    // Name only in URL (not in title) — now rejected by title filter
+    const urlOnly = evaluateSearchResults(platform, "Carbone", {
       results: [
         {
           title: "Restaurant Page",
@@ -558,7 +558,7 @@ describe("evaluateSearchResults() with Brave Search results", () => {
       ],
       blocked: false,
     });
-    expect(urlMatch.found).toBe(true);
+    expect(urlOnly.found).toBe(false);
   });
 
   it("respects domainFilter and skips non-matching domains", () => {
@@ -636,18 +636,116 @@ describe("evaluateSearchResults() with Brave Search results", () => {
   it("handles results with missing fields gracefully", () => {
     const platform = makePlatform({ domainFilter: "" });
 
-    const result = evaluateSearchResults(platform, "Carbone", {
+    // Empty title won't pass title filter — result is not found
+    const emptyTitle = evaluateSearchResults(platform, "Carbone", {
       results: [
         {
-          title: "", // Empty title
+          title: "",
           href: "https://example.com/carbone",
           snippet: "Visit Carbone today",
         },
       ],
       blocked: false,
     });
+    expect(emptyTitle.found).toBe(false);
 
-    expect(result.found).toBe(true);
-    expect(result.details).toBe("Found on TestPlatform"); // Fallback when title is empty
+    // Title with restaurant name still works
+    const withTitle = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone",
+          href: "https://example.com/carbone",
+          snippet: "",
+        },
+      ],
+      blocked: false,
+    });
+    expect(withTitle.found).toBe(true);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  titleMatchesRestaurant() — Title false-positive filter
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+describe("titleMatchesRestaurant()", () => {
+  it("matches when name is at start of title", () => {
+    expect(titleMatchesRestaurant("Carbone - Italian NYC", "Carbone")).toBe(true);
+  });
+
+  it("matches when name appears after a separator", () => {
+    expect(titleMatchesRestaurant("inKind | Carbone NYC", "Carbone")).toBe(true);
+    expect(titleMatchesRestaurant("Restaurants - Carbone", "Carbone")).toBe(true);
+    expect(titleMatchesRestaurant("Menu: Carbone Italian", "Carbone")).toBe(true);
+  });
+
+  it("matches when name is a large portion of the title", () => {
+    expect(titleMatchesRestaurant("Carbone NYC", "Carbone")).toBe(true);
+  });
+
+  it("matches multi-word names when all significant words appear", () => {
+    expect(titleMatchesRestaurant("The Red Hen Restaurant DC", "Red Hen")).toBe(true);
+  });
+
+  it("rejects when name is buried in unrelated text", () => {
+    expect(titleMatchesRestaurant("Revue carbone et énergie fossile en France", "Carbone")).toBe(false);
+  });
+
+  it("rejects when name does not appear at all", () => {
+    expect(titleMatchesRestaurant("Best Italian Restaurants NYC", "Carbone")).toBe(false);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  isNoResultsPage() — No-results page detection
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+describe("isNoResultsPage()", () => {
+  it("detects common no-results phrases", () => {
+    expect(isNoResultsPage("Search", "No results found for Carbone")).toBe(true);
+    expect(isNoResultsPage("0 results", "Try different keywords")).toBe(true);
+    expect(isNoResultsPage("Sorry, no restaurants found", "")).toBe(true);
+  });
+
+  it("returns false for normal result pages", () => {
+    expect(isNoResultsPage("Carbone - inKind", "Book Carbone with credit")).toBe(false);
+    expect(isNoResultsPage("Menu", "Italian restaurant")).toBe(false);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  evaluateSearchResults() — False positive filtering
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+describe("evaluateSearchResults() false positive filtering", () => {
+  it("skips no-results pages", () => {
+    const platform = makePlatform({ domainFilter: "" });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "No results found",
+          href: "https://example.com/search?q=carbone",
+          snippet: "We couldn't find any matches for Carbone",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  it("rejects results where name is buried in foreign-language title", () => {
+    const platform = makePlatform({ name: "Rakuten Dining", domainFilter: "rakuten.co.jp" });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Revue carbone et énergie fossile — Rakuten",
+          href: "https://rakuten.co.jp/article/revue-carbone",
+          snippet: "Article sur le carbone en France",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
   });
 });

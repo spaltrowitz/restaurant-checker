@@ -1,5 +1,5 @@
 import { Platform, CheckResult, PLATFORMS } from "./platforms";
-import { matchesRestaurant, slugVariants } from "./matching";
+import { matchesRestaurant, slugVariants, norm } from "./matching";
 
 // --- In-memory cache ---
 type CacheEntry<T> = { data: T; expiresAt: number };
@@ -204,6 +204,35 @@ export async function batchSearch(
   return resultMap;
 }
 
+export function titleMatchesRestaurant(title: string, name: string): boolean {
+  const t = norm(title);
+  const n = norm(name);
+  if (t.startsWith(n)) return true;
+  for (const sep of ["|", "-", "–", "—", ":"]) {
+    const parts = t.split(sep);
+    for (const part of parts) {
+      const stripped = part.trim();
+      if (stripped.startsWith(n) || stripped === n) return true;
+    }
+  }
+  if (t.includes(n) && n.length / Math.max(t.length, 1) > 0.3) return true;
+  const words = n.split(/\s+/).filter((w) => w.length > 2);
+  if (words.length > 1 && words.every((w) => t.includes(w))) return true;
+  return false;
+}
+
+const NO_RESULT_PHRASES = [
+  "no results found", "no more results", "did not match any",
+  "0 results", "zero results", "nothing found", "no matches found",
+  "try different keywords", "check spelling", "no restaurants found",
+  "we couldn't find", "we could not find", "sorry, no",
+];
+
+export function isNoResultsPage(title: string, snippet: string): boolean {
+  const combined = `${title} ${snippet}`.toLowerCase();
+  return NO_RESULT_PHRASES.some((phrase) => combined.includes(phrase));
+}
+
 // Convert raw search results into a CheckResult for a platform
 export function evaluateSearchResults(
   platform: Platform,
@@ -231,6 +260,10 @@ export function evaluateSearchResults(
     ) {
       continue;
     }
+    // Skip "no results" pages that search engines index
+    if (isNoResultsPage(r.title, r.snippet)) {
+      continue;
+    }
     // Skip generic blog/help pages that mention restaurant names incidentally
     const lowerHref = r.href.toLowerCase();
     if (
@@ -242,7 +275,10 @@ export function evaluateSearchResults(
     ) {
       continue;
     }
-    if (matchesRestaurant(`${r.title} ${r.snippet} ${r.href}`, name)) {
+    if (
+      titleMatchesRestaurant(r.title, name) &&
+      matchesRestaurant(`${r.title} ${r.snippet} ${r.href}`, name)
+    ) {
       return {
         platform: platform.name,
         found: true,
