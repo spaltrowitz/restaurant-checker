@@ -100,66 +100,62 @@ type SearchResponse = {
   blocked: boolean;
 };
 
-// Search via Google Custom Search JSON API (100 free queries/day)
-async function googleCSESearch(query: string): Promise<SearchResult[]> {
-  const apiKey = process.env.GOOGLE_CSE_API_KEY;
-  const cx = process.env.GOOGLE_CSE_ID;
+// Search via Brave Search API
+async function braveSearch(query: string): Promise<SearchResult[]> {
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
 
   if (!apiKey || apiKey === "your_api_key_here") {
-    throw new Error("GOOGLE_CSE_API_KEY not configured");
-  }
-  if (!cx || cx === "your_cse_id_here") {
-    throw new Error("GOOGLE_CSE_ID not configured");
+    throw new Error("BRAVE_SEARCH_API_KEY not configured");
   }
 
   const params = new URLSearchParams({
-    key: apiKey,
-    cx,
     q: query,
-    num: "10",
+    count: "5",
   });
 
   const resp = await fetch(
-    `https://www.googleapis.com/customsearch/v1?${params}`,
-    { signal: AbortSignal.timeout(10000) }
+    `https://api.search.brave.com/res/v1/web/search?${params}`,
+    {
+      headers: {
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": apiKey,
+      },
+      signal: AbortSignal.timeout(10000),
+    }
   );
 
   if (!resp.ok) {
-    // Parse error body for actionable diagnostics
     let reason = "";
     try {
       const errBody = await resp.json();
-      reason = errBody?.error?.message || errBody?.error?.status || "";
+      reason = errBody?.message || errBody?.error || "";
     } catch { /* ignore parse failure */ }
 
     if (resp.status === 403) {
-      if (reason.toLowerCase().includes("quota") || reason.toLowerCase().includes("limit")) {
-        console.error(`[google-cse] QUOTA EXHAUSTED (403): ${reason} | query: ${query}`);
-        throw new Error("Google CSE quota exhausted");
-      }
-      console.error(`[google-cse] PERMISSION DENIED (403): ${reason} | query: ${query}`);
-      throw new Error(`Google CSE permission denied: ${reason}`);
+      console.error(`[brave-search] PERMISSION DENIED (403): ${reason} | query: ${query}`);
+      throw new Error(`Brave Search permission denied: ${reason}`);
     }
     if (resp.status === 429) {
-      console.error(`[google-cse] RATE LIMITED (429): ${reason} | query: ${query}`);
-      throw new Error("Google CSE rate limited");
+      console.error(`[brave-search] RATE LIMITED (429): ${reason} | query: ${query}`);
+      throw new Error("Brave Search rate limited");
     }
-    console.error(`[google-cse] HTTP ${resp.status}: ${reason} | query: ${query}`);
-    throw new Error(`Google CSE HTTP ${resp.status}: ${reason}`);
+    console.error(`[brave-search] HTTP ${resp.status}: ${reason} | query: ${query}`);
+    throw new Error(`Brave Search HTTP ${resp.status}: ${reason}`);
   }
 
   const data = await resp.json();
-  const items: Array<{ title?: string; link?: string; snippet?: string }> =
-    data.items || [];
+  const results: Array<{ title?: string; url?: string; description?: string }> =
+    data?.web?.results || [];
 
-  return items.map((r) => ({
+  return results.slice(0, 5).map((r) => ({
     title: r.title ?? "",
-    href: r.link ?? "",
-    snippet: r.snippet ?? "",
+    href: r.url ?? "",
+    snippet: r.description ?? "",
   }));
 }
 
-// Batch search: runs all non-Blackbird queries via Google CSE in parallel
+// Batch search: runs all non-Blackbird queries via Brave Search in parallel
 export async function batchSearch(
   name: string
 ): Promise<Map<string, SearchResponse>> {
@@ -172,7 +168,6 @@ export async function batchSearch(
   }
 
   // Run all searches in parallel, using cache when available
-  // Fallback strategy: if site:-scoped query fails, retry with the original format
   const searchPromises = nonBlackbird.map(async (platform) => {
     const cacheKey = normalizeKey(name, platform.name);
     const cached = getSearchCache(cacheKey);
@@ -188,23 +183,11 @@ export async function batchSearch(
     const query = `${baseQuery}${siteOp}`;
 
     try {
-      const results = await googleCSESearch(query);
+      const results = await braveSearch(query);
       setSearchCache(cacheKey, results);
       return { platform: platform.name, results, blocked: false };
     } catch (error) {
-      // Fallback: retry without site: operator if one was used
-      if (siteOp) {
-        console.warn(`[google-cse] Retrying ${platform.name} without site: operator`);
-        try {
-          const fallbackResults = await googleCSESearch(baseQuery);
-          setSearchCache(cacheKey, fallbackResults);
-          return { platform: platform.name, results: fallbackResults, blocked: false };
-        } catch (fallbackError) {
-          console.error('[google-cse]', platform.name, 'fallback also failed:', fallbackError);
-          return { platform: platform.name, results: [] as SearchResult[], blocked: true };
-        }
-      }
-      console.error('[google-cse]', platform.name, error);
+      console.error('[brave-search]', platform.name, error);
       return { platform: platform.name, results: [] as SearchResult[], blocked: true };
     }
   });

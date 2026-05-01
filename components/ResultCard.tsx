@@ -114,19 +114,19 @@ export function ResultCard({
   // FOUND state — celebration! Gold border, green accent
   if (result.found || communityConfirmed) {
     return (
-      <div className="flex items-start gap-4 rounded-xl border border-[var(--color-success)]/30 bg-[var(--color-success-dim)] p-5 animate-fade-in transition-all duration-200 hover:border-[var(--color-success)]/50">
+      <div className="flex items-start gap-4 rounded-xl border-2 border-[var(--color-success)]/40 bg-[var(--color-success-dim)] p-5 animate-fade-in transition-all duration-200 hover:border-[var(--color-success)]/60 hover:shadow-lg">
         <span className="mt-0.5 text-xl" aria-label="Found" role="img">✅</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-[var(--color-text-primary)]">{platformName}</p>
+            <p className="font-bold text-[var(--color-text-primary)]">{platformName}</p>
             {platform && (
-              <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-gold)] ring-1 ring-[var(--color-gold)]/20">
+              <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-3 py-1 text-xs font-semibold text-[var(--color-gold)] ring-1 ring-[var(--color-gold)]/30">
                 {platform.rewardEmoji} {platform.rewardLabel}
               </span>
             )}
             {communityReport && <CommunityBadge report={communityReport} />}
           </div>
-          <p className="mt-1.5 text-sm text-[var(--color-text-secondary)] truncate">
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)] truncate">
             {result.found
               ? result.details
               : `Community confirmed on ${platformName}`}
@@ -136,9 +136,9 @@ export function ResultCard({
               href={result.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-block text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-dim)] hover:underline truncate max-w-full transition-colors"
+              className="mt-3 inline-block text-sm font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-dim)] hover:underline truncate max-w-full transition-colors"
             >
-              {result.url}
+              View deal →
             </a>
           )}
           {!result.found && platform && (
@@ -146,13 +146,13 @@ export function ResultCard({
               href={platform.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-block text-sm text-[var(--color-gold)] hover:underline transition-colors"
+              className="mt-3 inline-block text-sm font-medium text-[var(--color-gold)] hover:underline transition-colors"
             >
               Open {platformName} →
             </a>
           )}
           {platform?.personalized && (
-            <p className="mt-2 text-xs text-[var(--color-warning)]">
+            <p className="mt-3 text-xs text-[var(--color-warning)]">
               ⚠️ Offers are personalized — your discount may differ
             </p>
           )}
@@ -164,25 +164,25 @@ export function ResultCard({
   // SEARCH UNAVAILABLE state — amber/warning
   if (result.searchUnavailable) {
     return (
-      <div className="flex items-start gap-4 rounded-xl border border-[var(--color-warning)]/20 bg-[var(--color-warning-dim)] p-5 animate-fade-in transition-all duration-200 hover:border-[var(--color-warning)]/40">
+      <div className="flex items-start gap-4 rounded-xl border-2 border-[var(--color-warning)]/30 bg-[var(--color-warning-dim)] p-5 animate-fade-in transition-all duration-200 hover:border-[var(--color-warning)]/50 hover:shadow-lg">
         <span className="mt-0.5 text-xl" aria-label="Manual check needed" role="img">🔗</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-[var(--color-warning)]">{platformName}</p>
+            <p className="font-bold text-[var(--color-warning)]">{platformName}</p>
             {platform && (
-              <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-secondary)] ring-1 ring-[var(--color-border)]">
+              <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-3 py-1 text-xs font-semibold text-[var(--color-text-secondary)] ring-1 ring-[var(--color-border)]">
                 {platform.rewardEmoji} {platform.rewardLabel}
               </span>
             )}
             {communityReport && <CommunityBadge report={communityReport} />}
           </div>
-          <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">{result.details}</p>
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{result.details}</p>
           <div className="mt-3 flex items-center gap-3 flex-wrap">
             <a
               href={platform?.url ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-warning)]/10 px-4 py-2 text-sm font-medium text-[var(--color-warning)] hover:bg-[var(--color-warning)]/20 transition-all duration-200 ring-1 ring-[var(--color-warning)]/20"
+              className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-warning)]/15 px-4 py-2 text-sm font-semibold text-[var(--color-warning)] hover:bg-[var(--color-warning)]/25 transition-all duration-200 ring-1 ring-[var(--color-warning)]/30"
             >
               {platform?.appOnly ? "📱 Open app" : "🔗 Open"} {platformName} →
             </a>

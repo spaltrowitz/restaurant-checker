@@ -20,19 +20,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-**API Setup**: Copy `.env.local.example` to `.env.local` and add your Google Custom Search API key and CSE ID. See the example file for setup instructions.
+**API Setup**: Copy `.env.local.example` to `.env.local` and add your Brave Search API key. Get a free API key at [https://brave.com/search/api/](https://brave.com/search/api/).
 
 ### How It Works
 
 | Platform | Check Method |
 |----------|-------------|
 | **Blackbird** | Public sitemap parsing (`sm.xml`) |
-| **All others** | Google Custom Search Engine (CSE) with `site:` filtering |
+| **All others** | Brave Search API with `site:` filtering |
 
 - Results stream in via SSE (Server-Sent Events) as each platform completes
 - 2-second rate limit between platform checks (handled server-side)
 - App-only platforms (Upside, Seated, Nea, Rakuten) may not appear in web search — check the app manually
-- **Free tier limit**: Google CSE provides 100 queries per day with the free tier
+- **Free tier**: Brave Search offers 2,000 queries per month on the free tier
 
 ### Architecture
 
@@ -59,7 +59,7 @@ components/
 2. Authenticate: `fly auth login`
 3. Launch: `fly launch` (uses existing fly.toml)
 4. Create a volume for SQLite: `fly volumes create data --size 1 --region ewr`
-5. Set secrets: `fly secrets set GOOGLE_CSE_API_KEY=your_key GOOGLE_CSE_ID=your_id`
+5. Set secrets: `fly secrets set BRAVE_SEARCH_API_KEY=your_key`
 6. Deploy: `fly deploy`
 
 The app uses SQLite with a persistent Fly volume mounted at `/data`. The database file lives at `/data/eatdiscounted.db`.
@@ -91,8 +91,8 @@ python cli/restaurant_checker.py check "Carbone"
 
 ## Compliance
 
-✅ Only uses publicly accessible APIs (sitemaps + Google Custom Search Engine)
-✅ No scraping — uses official Google API
+✅ Only uses publicly accessible APIs (sitemaps + Brave Search API)
+✅ No scraping — uses official Brave Search API
 ✅ Rate-limited (2s between checks, enforced server-side)
 ✅ No private or undocumented APIs
 

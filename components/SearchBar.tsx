@@ -28,12 +28,12 @@ function SearchBarInner() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search a restaurant name…"
         aria-label="Search for a restaurant"
-        className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-5 py-4 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-glow)] transition-all duration-200"
+        className="flex-1 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-raised)] px-6 py-4 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold-glow)] transition-all duration-200 shadow-sm"
         autoFocus
       />
       <button
         type="submit"
-        className="rounded-xl bg-[var(--color-gold)] px-7 py-4 text-sm font-semibold text-[var(--color-surface)] transition-all duration-200 hover:bg-[var(--color-gold-dim)] hover:scale-[1.02] active:scale-[0.98]"
+        className="rounded-xl bg-[var(--color-gold)] px-8 py-4 text-base font-semibold text-[var(--color-surface)] transition-all duration-200 hover:bg-[var(--color-gold-dim)] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] shadow-md"
       >
         Search
       </button>

@@ -82,3 +82,19 @@
 - **Trade-off:** DDG fallback is sequential (not parallel) to respect rate limits. ~14 seconds for 7 platforms vs ~2s parallel with CSE. Acceptable since it only activates when CSE is broken.
 - **Tests:** 38/38 pass, TypeScript compiles clean, Next.js build green.
 - **Orchestration:** Documented in `.squad/orchestration-log/2026-04-30T19-36-30Z-fenster.md` and `.squad/log/2026-04-30T19-36-30Z-ddg-fallback.md`. Decisions archived in `.squad/decisions.md`.
+
+### 2026-04-30 Brave Search API Migration
+- **Root cause:** Google CSE completely broken (100% error rate, permission denied). Required complex Cloud Console setup that was never completed. Python CLI already successfully uses Brave Search API.
+- **Solution:** Replaced `googleCSESearch()` with `braveSearch()` calling `https://api.search.brave.com/res/v1/web/search` with `X-Subscription-Token` header. Removed Google CSE env vars (`GOOGLE_CSE_API_KEY`, `GOOGLE_CSE_ID`) and replaced with single `BRAVE_SEARCH_API_KEY`.
+- **Brave API details:** Returns 5 results per query, supports `site:` operator, has 2,000 free queries/month (20x Google CSE's 100/day). Response structure: `data.web.results[]` with `title`, `url`, `description` fields.
+- **Removed complexity:** Eliminated DuckDuckGo fallback code entirely (no longer needed). Removed retry-without-site-operator logic. Brave is now the sole search engine.
+- **Caching:** Existing 1-hour in-memory cache logic preserved. All search queries still cached by `restaurant::platform` key.
+- **Error handling:** Updated error messages and logging to use `[brave-search]` prefix. Preserved structured error parsing for 403/429 responses.
+- **Documentation:** Updated README.md Quick Start, How It Works, Deployment, and Compliance sections. Created `.env.local.example` with Brave API key reference.
+- **Tests:** All 38 tests pass. Build green. No code changes needed in tests — all matching logic unchanged.
+- **Trade-off:** Brave free tier (2,000/month) is far more generous than Google CSE (100/day). With 1-hour caching, should support ~200+ users/day before hitting limits.
+
+### 2026-05-01 Team Delivery: Brave Search + Design + Tests
+- Deployed Brave Search API integration (lib/checkers.ts) — replaced broken Google CSE, removed DDG fallback
+- Build passes, 38 existing tests all green
+- Collaborating with Hockney on design improvements and McManus on test suite expansion

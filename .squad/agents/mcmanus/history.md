@@ -63,3 +63,19 @@
 - Team context: Fenster added caching+rate limiting, Hockney fixed SSE+a11y+error pages, Keaton updated README.
 
 📌 Team update (2026-04-30T18:34): Platform accuracy — Redfoot identified slugVariants() as dead code (defined+tested, never called). Also proposes word-boundary matching which would change matchesRestaurant() behavior — tests will need updating.
+
+### 2026-04-30 — Brave Search API Test Suite
+
+- **27 tests written** for Brave Search API integration in `lib/__tests__/checkers.test.ts`. All 27 pass.
+- **Test coverage:**
+  - `braveSearch()` function: API responses, error handling (403/429/500), timeouts, malformed JSON, missing API key
+  - `batchSearch()` function: parallel execution, caching behavior, site: operator usage, searchQuery inclusion, mixed success/failure
+  - `evaluateSearchResults()` function: verified compatibility with Brave Search result format, domain filtering, blog/help URL filtering, appOnly platform handling
+- **Testing patterns established:**
+  - Use `uniqueRestaurantName()` helper to avoid cache collisions between tests
+  - Mock `fetch` globally with `vi.fn()` and set `BRAVE_SEARCH_API_KEY` in beforeEach
+  - Test both success and failure paths for all external API calls
+  - Verify cache prevents redundant API calls (second identical search = 0 fetch calls)
+- **Test file location:** `lib/__tests__/checkers.test.ts`
+- **Current state:** Brave Search implementation already completed by Fenster. Tests confirm it works correctly.
+- **Total test count:** 65 tests (38 matching + 27 checkers) — all pass

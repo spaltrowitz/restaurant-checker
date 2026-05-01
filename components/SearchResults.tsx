@@ -4,7 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
 import { ResultCard } from "./ResultCard";
-import { ConflictWarning } from "./ConflictWarning";
 
 interface CommunityReportInfo {
   count: number;
@@ -212,6 +211,98 @@ function SearchResultsInner() {
     return parts.join(" — ");
   };
 
+  // Sort results by signal: found → manual-check → not-found
+  const sortedPlatforms = [...PLATFORMS].sort((a, b) => {
+    const aResult = results.get(a.name);
+    const bResult = results.get(b.name);
+    
+    const aFound = aResult?.found || (communityReports.get(a.name)?.count ?? 0) >= 2;
+    const bFound = bResult?.found || (communityReports.get(b.name)?.count ?? 0) >= 2;
+    const aManual = aResult?.searchUnavailable && !aFound;
+    const bManual = bResult?.searchUnavailable && !bFound;
+    
+    if (aFound && !bFound) return -1;
+    if (!aFound && bFound) return 1;
+    if (aManual && !bManual) return -1;
+    if (!aManual && bManual) return 1;
+    return 0;
+  });
+
+  // Separate not-found platforms after streaming is done
+  const notFoundPlatforms = isDone
+    ? sortedPlatforms.filter((p) => {
+        const r = results.get(p.name);
+        const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
+        return r && !r.found && !r.searchUnavailable && !communityConfirmed;
+      })
+    : [];
+
+  const visiblePlatforms = isDone
+    ? sortedPlatforms.filter((p) => {
+        const r = results.get(p.name);
+        const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
+        return !r || r.found || r.searchUnavailable || communityConfirmed;
+      })
+    : sortedPlatforms;
+
+  // Celebration summary card (post-stream)
+  const celebrationSummary = isDone && resultsArr.length > 0 && (
+    <div
+      className={`mb-6 rounded-xl p-6 animate-fade-in ${
+        foundCount > 0
+          ? "bg-gradient-to-br from-[var(--color-success-dim)] via-[var(--color-surface-raised)] to-[var(--color-surface-raised)] border border-[var(--color-success)]/30"
+          : "bg-[var(--color-surface-raised)] border border-[var(--color-border)]"
+      }`}
+    >
+      {foundCount > 0 ? (
+        <>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl" role="img" aria-label="celebration">
+              🎉
+            </span>
+            <h2 className="text-xl font-bold text-[var(--color-success)]">
+              Found on {foundCount} platform{foundCount !== 1 ? "s" : ""}!
+            </h2>
+          </div>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Available at:{" "}
+            {sortedPlatforms
+              .filter((p) => {
+                const r = results.get(p.name);
+                const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
+                return r?.found || communityConfirmed;
+              })
+              .map((p) => p.name)
+              .join(", ")}
+          </p>
+          {conflict && (
+            <div className="mt-3 pt-3 border-t border-[var(--color-border)] text-sm">
+              <span className="text-[var(--color-warning)]">⚠️ {conflict.message}</span>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl" role="img" aria-label="no results">
+              🔍
+            </span>
+            <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
+              No deals found yet
+            </h2>
+          </div>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {unavailableCount > 0
+              ? `${unavailableCount} platform${
+                  unavailableCount !== 1 ? "s" : ""
+                } need manual check — they might still have deals!`
+              : "This restaurant isn't on any discount platforms yet. Try searching another spot!"}
+          </p>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="mt-8" aria-live="polite" role="status" aria-busy={isSearching}>
       {error && (
@@ -226,15 +317,17 @@ function SearchResultsInner() {
         </div>
       )}
 
-      {!error && (isSearching || isDone) && (
+      {!error && isSearching && (
         <p className="mb-6 text-sm text-[var(--color-text-secondary)]">
           {summaryText()}
         </p>
       )}
 
+      {!error && celebrationSummary}
+
       {!error && (
         <div className="grid gap-3">
-          {PLATFORMS.map((p) => (
+          {visiblePlatforms.map((p) => (
             <ResultCard
               key={p.name}
               platformName={p.name}
@@ -247,12 +340,12 @@ function SearchResultsInner() {
         </div>
       )}
 
-      {conflict && (
-        <div className="mt-4">
-          <ConflictWarning
-            platforms={conflict.platforms}
-            message={conflict.message}
-          />
+      {notFoundPlatforms.length > 0 && (
+        <div className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-60 animate-fade-in">
+          <p className="text-sm text-[var(--color-text-muted)]">
+            <span className="font-medium">Not available on:</span>{" "}
+            {notFoundPlatforms.map((p) => p.name).join(", ")}
+          </p>
         </div>
       )}
     </div>

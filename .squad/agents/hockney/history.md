@@ -74,3 +74,29 @@
 - Keeping streaming UX intact while adding post-stream collapse requires conditional rendering per `isDone` state — show full cards while streaming, collapse only after.
 - The ConflictWarning component import became unused after merging conflict info into the summary card — removed to keep lint clean.
 - Sorting a rendered list by dynamic state while preserving React keys works fine with `.slice().sort()` on the platform array.
+
+### 2026-04-30 — Design Overhaul: Food-Forward Premium Polish
+
+**What I did:**
+1. **Collapsed not-found results (#1 priority):** After streaming completes, all not-found platforms collapse into a single subtle line ("Not available on: X, Y, Z") instead of individual cards. Reduces scroll by ~50% on mobile. During streaming, full cards still show for real-time feedback.
+2. **Enhanced search bar:** Increased border to 2px, stronger focus ring (4px vs 2px), added shadow, larger padding (6px vs 5px), bigger button with shadow on hover. Makes search feel more premium and prominent.
+3. **Improved hero section:** Added visual separator line under title (gold gradient divider), increased spacing (py-24 vs py-20), better typography hierarchy with larger tagline (text-xl vs text-lg).
+4. **Elevated found cards:** Stronger green border (2px + 40% opacity vs 1px + 30%), shadow on hover, bolder platform names, larger reward badges, "View deal →" link instead of raw URL.
+5. **Enhanced manual-check cards:** Stronger amber border (2px + 30% opacity), shadow on hover, bolder labels, button uses 15% opacity bg (vs 10%).
+6. **Better popular searches:** More spacing (mt-16 vs mt-12), semibold label, larger buttons (px-5 vs px-4), hover scale effect.
+7. **Adjusted color theme:** Slightly richer success-dim background (#0a3d2e vs #064e3b), stronger gold-glow (30% vs 20% opacity).
+8. **Celebration summary card improvements:** Larger emoji (text-2xl), better spacing, platform list inline after "Available at:", conflict warnings integrated inline with visual separator.
+
+**What I learned:**
+- Drawing inspiration from Blackbird/Seated/inKind apps means: strong hierarchy, generous spacing, subtle animations, food-forward colors (gold accents work better than cold blues).
+- Border thickness (2px vs 1px) makes a huge perceptual difference in premium feel without looking heavy.
+- Shadows on hover + scale transforms (1.02-1.03) create tactile, responsive feel that modern dining apps use.
+- Not-found results should truly recede — 60% opacity + subtle border makes them disappear visually while remaining accessible.
+- The celebration moment (summary card) needs to feel like a real win — green gradient + platform names + inline conflict warning is more cohesive than separate components.
+
+### 2026-05-01 Team Delivery: Premium Design Overhaul
+- Collapsed not-found results into single line (50% scroll reduction mobile)
+- Enhanced search bar, hero, cards with premium styling (borders, shadows, spacing)
+- Inspired by Blackbird/Seated/inKind/Nea design patterns
+- Build passes, all tests passing
+- Collaborating with Fenster on API integration and McManus on test coverage
