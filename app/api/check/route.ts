@@ -3,6 +3,7 @@ import {
   checkBlackbird,
   checkUpside,
   checkBilt,
+  checkRewardsNetwork,
   batchSearch,
   evaluateSearchResults,
 } from "@/lib/checkers";
@@ -30,11 +31,12 @@ export async function GET(request: Request) {
       try {
         const foundPlatforms: string[] = [];
 
-        // Run Blackbird sitemap check, Upside API check, Bilt API check, and batch web search in parallel
-        const [blackbirdResult, upsideResult, biltResult, searchResults] = await Promise.all([
+        // Run Blackbird sitemap check, Upside API check, Bilt API check, Rewards Network API check, and batch web search in parallel
+        const [blackbirdResult, upsideResult, biltResult, rewardsNetworkResult, searchResults] = await Promise.all([
           checkBlackbird(query),
           checkUpside(query),
           checkBilt(query),
+          checkRewardsNetwork(query),
           batchSearch(query),
         ]);
 
@@ -56,9 +58,15 @@ export async function GET(request: Request) {
           encoder.encode(`data: ${JSON.stringify(biltResult)}\n\n`)
         );
 
+        // Stream Rewards Network result
+        if (rewardsNetworkResult.found) foundPlatforms.push("Rewards Network");
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify(rewardsNetworkResult)}\n\n`)
+        );
+
         // Stream remaining platform results
         for (const platform of PLATFORMS) {
-          if (platform.name === "Blackbird" || platform.name === "Upside" || platform.name === "Bilt Rewards") continue;
+          if (platform.name === "Blackbird" || platform.name === "Upside" || platform.name === "Bilt Rewards" || platform.name === "Rewards Network") continue;
 
           const search = searchResults.get(platform.name);
           const result = search

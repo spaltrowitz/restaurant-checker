@@ -238,6 +238,118 @@ export async function checkUpside(name: string): Promise<CheckResult> {
   }
 }
 
+// --- Rewards Network direct API ---
+// Powers 8 airline/hotel dining programs: AA, United, Southwest, Hilton, Hyatt, Marriott, JetBlue, Choice
+
+type RewardsNetworkMerchant = {
+  id: string;
+  name: string;
+  benefits: Array<{ value: string; dayOfWeek: string; monthDay: string }>;
+  location?: {
+    neighborhood?: string;
+    address?: { address1?: string; city?: string; state?: string; zip?: string };
+  };
+  details?: {
+    cuisines?: string[];
+  };
+  designation?: string;
+};
+
+let rewardsNetworkCache: CacheEntry<RewardsNetworkMerchant[]> | null = null;
+const REWARDS_NETWORK_CACHE_TTL = 3_600_000; // 1 hour
+const REWARDS_NETWORK_API_URL =
+  "https://aadvantagedining.com/api/v2/Merchants/Search";
+
+async function getRewardsNetworkMerchants(
+  query: string
+): Promise<RewardsNetworkMerchant[]> {
+  const cacheKey = `rn::${norm(query)}`;
+  if (rewardsNetworkCache && Date.now() < rewardsNetworkCache.expiresAt) {
+    console.log("[cache] HIT rewards network");
+    return rewardsNetworkCache.data;
+  }
+
+  console.log(`[cache] MISS rewards network (${cacheKey}) — fetching`);
+
+  const params = new URLSearchParams({
+    campaignCode: "aa-dining",
+    location: "10001",
+    restaurantOrCuisine: query,
+    pageSize: "50",
+    pageNo: "1",
+    sortBy: "recommended",
+  });
+
+  const resp = await fetch(`${REWARDS_NETWORK_API_URL}?${params}`, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!resp.ok) throw new Error(`Rewards Network API HTTP ${resp.status}`);
+
+  const data = await resp.json();
+  const merchants: RewardsNetworkMerchant[] = data.merchants ?? [];
+
+  rewardsNetworkCache = {
+    data: merchants,
+    expiresAt: Date.now() + REWARDS_NETWORK_CACHE_TTL,
+  };
+  console.log(`[rewards-network] Cached ${merchants.length} merchants for "${query}"`);
+  return merchants;
+}
+
+export async function checkRewardsNetwork(
+  name: string
+): Promise<CheckResult> {
+  const platform = PLATFORMS.find((p) => p.name === "Rewards Network")!;
+  try {
+    const merchants = await getRewardsNetworkMerchants(name);
+
+    for (const m of merchants) {
+      if (matchesRestaurant(m.name, name)) {
+        const rates = (m.benefits ?? [])
+          .map((b) => parseInt(b.value, 10))
+          .filter((v) => !isNaN(v) && v > 0);
+        const bestRate = rates.length > 0 ? Math.max(...rates) : 0;
+        const rateStr = bestRate > 0 ? `Up to ${bestRate}x miles/$` : "Miles/points per $1";
+        const cuisine = m.details?.cuisines?.length
+          ? ` (${m.details.cuisines.slice(0, 2).join(", ")})`
+          : "";
+        const designation = m.designation ? ` ⭐ ${m.designation}` : "";
+
+        return {
+          platform: "Rewards Network",
+          found: true,
+          details: `${m.name}${cuisine} — ${rateStr}${designation}. Works with AA, United, Southwest, Hilton, Hyatt, Marriott, JetBlue, Choice`,
+          method: "api",
+          url: `https://aadvantagedining.com/restaurants/${m.id}`,
+          matches: [m.name],
+        };
+      }
+    }
+
+    return {
+      platform: "Rewards Network",
+      found: false,
+      details: "Not found on Rewards Network dining programs",
+      method: "api",
+      url: platform.url,
+      matches: [],
+    };
+  } catch (e) {
+    console.error("[rewards-network] API error:", e);
+    return {
+      platform: "Rewards Network",
+      found: false,
+      details: "Rewards Network check unavailable — try AAdvantage Dining directly",
+      method: "error",
+      url: platform.url,
+      matches: [],
+      searchUnavailable: true,
+    };
+  }
+}
+
 // --- Bilt Rewards direct API ---
 
 type BiltRestaurant = {
@@ -423,7 +535,7 @@ async function braveSearch(query: string): Promise<SearchResult[]> {
 export async function batchSearch(
   name: string
 ): Promise<Map<string, SearchResponse>> {
-  const nonBlackbird = PLATFORMS.filter((p) => p.name !== "Blackbird" && p.name !== "Upside" && p.name !== "Bilt Rewards");
+  const nonBlackbird = PLATFORMS.filter((p) => p.name !== "Blackbird" && p.name !== "Upside" && p.name !== "Bilt Rewards" && p.name !== "Rewards Network");
   const resultMap = new Map<string, SearchResponse>();
 
   // Initialize all as blocked (fallback)

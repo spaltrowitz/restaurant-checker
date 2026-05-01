@@ -155,6 +155,21 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "",
     domainFilter: "toogoodtogo.com",
   },
+  {
+    name: "Rewards Network",
+    url: "https://aadvantagedining.com",
+    appOnly: false,
+    rewardType: "points",
+    rewardEmoji: "✈️",
+    rewardLabel: "Miles/Points (8 programs)",
+    offerType:
+      "Uniform: earn airline miles or hotel points per $1 spent. Powers AA, United, Southwest, Hilton, Hyatt, Marriott, JetBlue, Choice",
+    personalized: false,
+    cardLink: true,
+    cardConflict: false,
+    searchQuery: "",
+    domainFilter: "",
+  },
 ];
 
 export const CARD_CONFLICT_GROUPS: string[][] = [
