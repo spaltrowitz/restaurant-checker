@@ -215,11 +215,11 @@ function SearchResultsInner() {
   return (
     <div className="mt-8" aria-live="polite" role="status" aria-busy={isSearching}>
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="mb-4 rounded-xl border border-[var(--color-error)]/20 bg-[var(--color-error-dim)] p-5 text-sm text-[var(--color-error)] animate-fade-in">
           <p>{error}</p>
           <button
             onClick={() => startSearch(query)}
-            className="mt-2 rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-800 transition-colors hover:bg-red-200"
+            className="mt-3 rounded-lg bg-[var(--color-error)]/10 px-4 py-2 text-xs font-medium text-[var(--color-error)] transition-all duration-200 hover:bg-[var(--color-error)]/20 ring-1 ring-[var(--color-error)]/20"
           >
             Try again
           </button>
@@ -227,7 +227,7 @@ function SearchResultsInner() {
       )}
 
       {!error && (isSearching || isDone) && (
-        <p className="mb-4 text-sm text-gray-500">
+        <p className="mb-6 text-sm text-[var(--color-text-secondary)]">
           {summaryText()}
         </p>
       )}

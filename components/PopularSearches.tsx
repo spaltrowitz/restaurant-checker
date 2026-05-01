@@ -30,17 +30,17 @@ function PopularSearchesInner() {
   }
 
   return (
-    <div className="mt-8">
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+    <div className="mt-12">
+      <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-widest">
         Try searching
       </p>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         {CURATED_NYC.map((name) => (
           <button
             key={name}
             onClick={() => handleClick(name)}
             aria-label={`Search for ${name}`}
-            className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50"
+            className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition-all duration-200 hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] hover:bg-[var(--color-gold-glow)]"
           >
             {name}
           </button>

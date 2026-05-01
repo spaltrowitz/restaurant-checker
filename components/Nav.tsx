@@ -7,29 +7,29 @@ export function Nav() {
   const pathname = usePathname();
 
   return (
-    <nav className="border-b border-gray-200 bg-white" aria-label="Main navigation">
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
-        <Link href="/" className="text-lg font-bold text-gray-900">
-          🔍 EatDiscounted
+    <nav className="border-b border-[var(--color-border)] bg-[var(--color-surface)]" aria-label="Main navigation">
+      <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
+        <Link href="/" className="text-lg font-bold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
+          <span className="text-[var(--color-gold)]">Eat</span>Discounted
         </Link>
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-6 text-sm">
           <Link
             href="/"
-            className={`transition-colors ${pathname === "/" ? "text-gray-900 font-medium" : "text-gray-500 hover:text-gray-900"}`}
+            className={`transition-colors ${pathname === "/" ? "text-[var(--color-gold)] font-medium" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}
             {...(pathname === "/" ? { "aria-current": "page" as const } : {})}
           >
             Search
           </Link>
           <Link
             href="/platforms"
-            className={`transition-colors ${pathname === "/platforms" ? "text-gray-900 font-medium" : "text-gray-500 hover:text-gray-900"}`}
+            className={`transition-colors ${pathname === "/platforms" ? "text-[var(--color-gold)] font-medium" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}
             {...(pathname === "/platforms" ? { "aria-current": "page" as const } : {})}
           >
             Platforms
           </Link>
           <Link
             href="/about"
-            className={`transition-colors ${pathname === "/about" ? "text-gray-900 font-medium" : "text-gray-500 hover:text-gray-900"}`}
+            className={`transition-colors ${pathname === "/about" ? "text-[var(--color-gold)] font-medium" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}
             {...(pathname === "/about" ? { "aria-current": "page" as const } : {})}
           >
             About

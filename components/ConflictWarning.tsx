@@ -5,13 +5,13 @@ interface ConflictWarningProps {
 
 export function ConflictWarning({ platforms, message }: ConflictWarningProps) {
   return (
-    <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
-      <div className="flex items-start gap-2">
-        <span className="text-lg">⚠️</span>
+    <div className="rounded-xl border border-[var(--color-warning)]/20 bg-[var(--color-warning-dim)] p-5 animate-fade-in">
+      <div className="flex items-start gap-3">
+        <span className="text-xl">⚠️</span>
         <div>
-          <p className="font-medium text-amber-800">Card Conflict</p>
-          <p className="mt-1 text-sm text-amber-700">{message}</p>
-          <p className="mt-1 text-xs text-amber-600">
+          <p className="font-semibold text-[var(--color-warning)]">Card Conflict</p>
+          <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">{message}</p>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
             Platforms: {platforms.join(", ")}
           </p>
         </div>

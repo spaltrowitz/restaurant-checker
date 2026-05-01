@@ -17,7 +17,7 @@ function SearchBarInner() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={handleSubmit} className="flex gap-3">
       <label htmlFor="restaurant-search" className="sr-only">
         Search for a restaurant
       </label>
@@ -28,12 +28,12 @@ function SearchBarInner() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search a restaurant name…"
         aria-label="Search for a restaurant"
-        className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
+        className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-5 py-4 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-glow)] transition-all duration-200"
         autoFocus
       />
       <button
         type="submit"
-        className="rounded-lg bg-gray-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+        className="rounded-xl bg-[var(--color-gold)] px-7 py-4 text-sm font-semibold text-[var(--color-surface)] transition-all duration-200 hover:bg-[var(--color-gold-dim)] hover:scale-[1.02] active:scale-[0.98]"
       >
         Search
       </button>
@@ -45,8 +45,8 @@ export function SearchBar() {
   return (
     <Suspense
       fallback={
-        <div className="flex gap-2">
-          <div className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-base text-gray-400">
+        <div className="flex gap-3">
+          <div className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-5 py-4 text-base text-[var(--color-text-muted)] animate-shimmer">
             Loading...
           </div>
         </div>
