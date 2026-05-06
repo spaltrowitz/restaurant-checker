@@ -31,7 +31,34 @@
 
 ## Learnings Summary
 
-### Sprint Completion Log — Major Milestones (2026-04-30 to 2026-05-01)
+### Sprint Completion Log — Major Milestones (2026-04-30 to 2026-05-06)
+
+#### 2026-05-06 P1 Data Quality & SSE Timeout Fixes
+
+**Gap 1.1 — False positive reduction in web search:**
+- Added `isGenericListPage()` filter: rejects "Top N restaurants", "Best restaurants in", listicle/roundup articles
+- Added `isAggregatorPage()` filter: rejects URLs with /article/, /guide/, /list/, /best-of/, /roundup/
+- Added minimum snippet quality check: snippets < 30 chars skipped as too short to be meaningful
+
+**Gap 1.2 — NYC-only filtering strengthened:**
+- Added `isNYCZipCode()` — validates 5-digit zip codes against NYC ranges (10001-10314, 11001-11256)
+- Added 13 non-NYC cities: San Jose, Sacramento, Orlando, New Orleans, Pittsburgh, Baltimore, Cleveland, Cincinnati, Kansas City, Indianapolis, Milwaukee, Scottsdale, Boca Raton
+- Added 8 non-NYC neighborhoods: Marina District, Back Bay, South Beach, Venice Beach, Capitol Hill, French Quarter, Buckhead, River North
+
+**Gap 1.3 — Restaurant name normalization hardened:**
+- `norm()` now strips ALL apostrophe variants (', ', `, \u2019) before NFD decomposition
+- `&` → `"and"` normalization ensures "McCormick & Schmick's" matches "McCormick and Schmicks"
+- Existing NFD + combining mark stripping already handles é→e, ü→u, ñ→n correctly
+- Added 7 test cases for tricky names: D'Angelo, L'Artusi, McCormick & Schmick's, Café Boulud, José Andrés, Señor Pollo
+
+**Gap 4.3 — SSE streaming timeout:**
+- Client timeout (SearchResults.tsx): 30s → 60s
+- API route (route.ts): per-platform 10s timeout wrapper with graceful fallback (`searchUnavailable: true`)
+- Each API checker already had internal AbortSignal.timeout; added outer race guard in route.ts
+
+**Test results:** 131 tests pass (6 new). Build green. Pushed.
+
+**Key trade-off:** The 30-char snippet minimum could theoretically filter a valid short snippet, but in practice Brave Search snippets are 100+ chars. The false-positive reduction far outweighs this edge case.
 
 #### 2026-04-30 Backend Hardening Sprint
 1. **In-memory Caching:** Google CSE results (1hr TTL), Blackbird sitemap (5min TTL). Key: `restaurant::platform`. ~10-50x capacity multiplier.

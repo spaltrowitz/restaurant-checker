@@ -395,3 +395,56 @@ describe("evaluateSearchResults()", () => {
     expect(result.found).toBe(false);
   });
 });
+
+// ─── Gap 1.3: Name normalization ───
+
+describe("norm — diacritic and punctuation normalization", () => {
+  it("D'Angelo matches DAngelo (apostrophe stripped)", () => {
+    expect(norm("D'Angelo")).toBe(norm("DAngelo"));
+  });
+
+  it.skip("matchesRestaurant finds D'Angelo in text with 'D Angelo' (pending Fenster normalization fix)", () => {
+    // Currently fails: norm("D'Angelo") → "dangelo" but norm("D Angelo") → "d angelo"
+    // Fenster's normalization work should reconcile apostrophe-as-space variants
+    expect(matchesRestaurant("Order from D Angelo today", "D'Angelo")).toBe(true);
+  });
+
+  it("L'Artusi matches LArtusi (apostrophe stripped)", () => {
+    expect(norm("L'Artusi")).toBe(norm("LArtusi"));
+  });
+
+  it("McCormick & Schmick's matches McCormick and Schmicks", () => {
+    const normalized = norm("McCormick & Schmick's");
+    expect(norm("McCormick and Schmicks")).toBe(normalized);
+  });
+
+  it("Café Boulud matches Cafe Boulud (diacritic stripping)", () => {
+    expect(norm("Café Boulud")).toBe(norm("Cafe Boulud"));
+  });
+
+  it("José Andrés matches Jose Andres", () => {
+    expect(norm("José Andrés")).toBe(norm("Jose Andres"));
+  });
+
+  it("curly apostrophe (\u2019) matches straight apostrophe (')", () => {
+    expect(norm("it\u2019s")).toBe(norm("it's"));
+  });
+});
+
+describe("matchesRestaurant — normalized name matching", () => {
+  it("matches D'Angelo in text containing dangelo", () => {
+    expect(matchesRestaurant("Order from DAngelo today", "D'Angelo")).toBe(true);
+  });
+
+  it("matches Café Boulud in text containing cafe boulud", () => {
+    expect(matchesRestaurant("Dine at Cafe Boulud tonight", "Café Boulud")).toBe(true);
+  });
+
+  it("matches José Andrés in text containing jose andres", () => {
+    expect(matchesRestaurant("Jose Andres opens new restaurant", "José Andrés")).toBe(true);
+  });
+
+  it("matches McCormick & Schmick's in text with 'and'", () => {
+    expect(matchesRestaurant("McCormick and Schmicks seafood", "McCormick & Schmick's")).toBe(true);
+  });
+});

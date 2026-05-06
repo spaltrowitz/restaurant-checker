@@ -148,3 +148,23 @@ The following learnings come from Tester agents across Shari's other personal pr
 
 **From Redfoot:** Cross-reference analysis quantifies that Bilt+Rewards Network cover 71% overlap, so test optimization opportunities exist — some platform combinations are correlated.
 
+### 2026-07-14 — P0+P1 Sprint Test Suite
+
+- **24 new tests written** across both test files for Gaps 1.1, 1.2, 1.3, and 4.3. 155 pass, 1 skipped. Total suite now 156 tests.
+- **Gap 1.1 (false positive filters) — 7 tests in checkers.test.ts:**
+  - `isGenericListPage` rejects "Top 10", "Best restaurants in", and "Dining guide" titles (3 tests)
+  - Actual platform pages like "Carbone — Blackbird" pass through (1 test)
+  - Aggregator URL paths `/blog/` and `/article/` rejected (2 tests)
+  - Short snippets (<30 chars) rejected (1 test)
+- **Gap 1.2 (NYC filter expansion) — 6 tests in checkers.test.ts:**
+  - Non-NYC zip (90210) rejected, NYC zip (10012) allowed (2 tests)
+  - Non-NYC neighborhoods (Marina District, Back Bay) rejected (2 tests)
+  - New non-NYC cities (New Orleans, Boca Raton) rejected (2 tests)
+- **Gap 1.3 (name normalization) — 10 tests in matching.test.ts:**
+  - `norm()` tests: D'Angelo/DAngelo, L'Artusi/LArtusi, McCormick & Schmick's, Café/Cafe, José Andrés/Jose Andres, curly/straight apostrophe (6 tests)
+  - `matchesRestaurant()` tests: DAngelo, Café Boulud, José Andrés, McCormick & Schmick's (4 tests)
+  - **1 skipped:** D'Angelo ↔ "D Angelo" (with space) — `norm()` strips apostrophe to concat ("dangelo") but preserves space ("d angelo"). Fenster's normalization fix should reconcile these.
+- **Gap 4.3 (SSE timeout) — 1 test in checkers.test.ts:**
+  - Verified `batchSearch` resolves within 20s when fetch hangs, thanks to `AbortSignal.timeout(15000)`. Mock properly aborts on signal.
+- **Lesson:** When mocking `fetch` for timeout tests, the mock must listen for `signal.abort` and reject with `AbortError` — otherwise the mock ignores the abort signal entirely and the test hangs.
+

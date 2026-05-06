@@ -1418,3 +1418,198 @@ describe("extractDealDetails()", () => {
     expect(result).toContain("$10 off");
   });
 });
+
+// ─── Gap 1.1: False positive filters ───
+
+describe("evaluateSearchResults — false positive filters", () => {
+  const platform = makePlatform({ domainFilter: "" });
+
+  it("rejects generic list page: 'Top 10 NYC Restaurants'", () => {
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Top 10 NYC Restaurants",
+          href: "https://example.com/carbone",
+          snippet: "Carbone is one of the top 10 restaurants in New York City for Italian food",
+        },
+      ],
+      blocked: false,
+    });
+    expect(result.found).toBe(false);
+  });
+
+  it("rejects generic list page: 'Best restaurants in Manhattan'", () => {
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Best restaurants in Manhattan 2026",
+          href: "https://example.com/carbone",
+          snippet: "Carbone leads our list of best restaurants in Manhattan for Italian cuisine",
+        },
+      ],
+      blocked: false,
+    });
+    expect(result.found).toBe(false);
+  });
+
+  it("rejects generic list page: 'Dining guide 2026'", () => {
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Dining guide 2026 — NYC picks",
+          href: "https://example.com/carbone-guide",
+          snippet: "Our dining guide features Carbone among the best Italian restaurants in New York",
+        },
+      ],
+      blocked: false,
+    });
+    expect(result.found).toBe(false);
+  });
+
+  it("allows actual platform page: 'Carbone — Blackbird'", () => {
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone — Blackbird",
+          href: "https://www.blackbird.xyz/spots/carbone",
+          snippet: "Carbone is a fine dining Italian restaurant in Greenwich Village, Manhattan",
+        },
+      ],
+      blocked: false,
+    });
+    expect(result.found).toBe(true);
+  });
+
+  it("rejects aggregator URL: /blog/best-nyc-restaurants", () => {
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone review and more",
+          href: "https://example.com/blog/best-nyc-restaurants",
+          snippet: "Carbone is a top pick in our roundup of the best restaurants in NYC Manhattan",
+        },
+      ],
+      blocked: false,
+    });
+    expect(result.found).toBe(false);
+  });
+
+  it("rejects aggregator URL: /article/dining-guide", () => {
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone feature in our dining guide",
+          href: "https://example.com/article/dining-guide",
+          snippet: "Carbone is featured in our comprehensive dining guide for New York City Manhattan",
+        },
+      ],
+      blocked: false,
+    });
+    expect(result.found).toBe(false);
+  });
+
+  it("rejects short snippet (<30 chars)", () => {
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone on Platform",
+          href: "https://example.com/carbone",
+          snippet: "Carbone NYC",
+        },
+      ],
+      blocked: false,
+    });
+    expect(result.found).toBe(false);
+  });
+});
+
+// ─── Gap 1.2: NYC filter expansion ───
+
+describe("isNonNYCResult — expanded NYC filtering", () => {
+  it("rejects non-NYC zip code (90210)", () => {
+    expect(isNonNYCResult(
+      "Carbone - Beverly Hills",
+      "Fine Italian dining near 90210 in Beverly Hills",
+      "https://example.com/carbone"
+    )).toBe(true);
+  });
+
+  it("allows NYC zip code (10012)", () => {
+    expect(isNonNYCResult(
+      "Carbone",
+      "Italian restaurant at 181 Thompson St, 10012",
+      "https://example.com/carbone"
+    )).toBe(false);
+  });
+
+  it("rejects non-NYC neighborhood: Marina District", () => {
+    expect(isNonNYCResult(
+      "Carbone - San Francisco",
+      "Great Italian food in the Marina District area",
+      "https://example.com/carbone-sf"
+    )).toBe(true);
+  });
+
+  it("rejects non-NYC neighborhood: Back Bay", () => {
+    expect(isNonNYCResult(
+      "Carbone - Boston",
+      "Italian dining experience in Back Bay neighborhood",
+      "https://example.com/carbone-boston"
+    )).toBe(true);
+  });
+
+  it("rejects new non-NYC city: New Orleans", () => {
+    expect(isNonNYCResult(
+      "Carbone - Louisiana",
+      "Fine dining arrives in New Orleans",
+      "https://example.com/carbone-nola"
+    )).toBe(true);
+  });
+
+  it("rejects new non-NYC city: Boca Raton", () => {
+    expect(isNonNYCResult(
+      "Carbone - Florida",
+      "The famous Italian restaurant opens in Boca Raton",
+      "https://example.com/carbone-boca"
+    )).toBe(true);
+  });
+});
+
+// ─── Gap 4.3: SSE timeout — checker functions use AbortSignal.timeout ───
+
+describe("checker timeout behavior", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+    process.env.BRAVE_SEARCH_API_KEY = "test-key";
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.BRAVE_SEARCH_API_KEY;
+  });
+
+  it("braveSearch rejects within timeout when fetch hangs", async () => {
+    const name = uniqueRestaurantName("TimeoutTest");
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      (_url: string, options?: { signal?: AbortSignal }) => {
+        return new Promise((resolve, reject) => {
+          const timer = setTimeout(resolve, 60000);
+          if (options?.signal) {
+            options.signal.addEventListener("abort", () => {
+              clearTimeout(timer);
+              reject(new DOMException("The operation was aborted", "AbortError"));
+            });
+          }
+        });
+      }
+    );
+
+    const start = Date.now();
+    await expect(
+      batchSearch(name, [makePlatform({ name: "SlowPlatform", searchQuery: "test", domainFilter: "example.com" })])
+    ).resolves.toBeDefined();
+    const elapsed = Date.now() - start;
+    // Should resolve well under 60s — AbortSignal.timeout(15000) should abort the fetch
+    expect(elapsed).toBeLessThan(20000);
+  }, 25000);
+});

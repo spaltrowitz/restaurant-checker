@@ -114,3 +114,12 @@ Hockney completed 5 sessions: ship-readiness evaluation (audit findings), critic
 - **Browse page:** `/browse` with `max-w-4xl` (wider than search's `max-w-2xl`) since it's a grid layout. Responsive 3/2/1 columns. Expanded neighborhood spans full width via `col-span-*`.
 - **Platform color badges:** Hardcoded color map per platform — Bilt=blue, RN=sky, Upside=green, Blackbird=purple, etc. Falls back to neutral surface colors for unknown platforms.
 - **Nav pattern:** Followed exact existing pattern — `aria-current="page"`, gold active text, secondary hover. Added Browse between Platforms and About.
+
+### P0/P1 Features — Explainer Modals + Filter Bar (2026-07)
+- **PlatformExplainer:** Hardcoded educational copy per platform in a `Record<string, PlatformInfo>`. Mobile = fixed bottom modal with backdrop blur. Desktop = absolute-positioned popover below the ℹ️ button.
+- **Focus trap pattern:** Query focusable elements inside modal ref, wrap Tab key at boundaries. ESC to close via keydown listener.
+- **Click-outside dismiss:** `mousedown` listener checking `contains()` on both modal and anchor refs to avoid closing on the button itself.
+- **Card conflict warning:** Shown conditionally only for card-linked platforms (Upside, Nea, Rewards Network, Bilt).
+- **FilterBar:** `useFilterState` hook encapsulates localStorage persistence with SSR-safe `useEffect` hydration. Avoids hydration mismatch by defaulting to neutral state on initial render.
+- **Reward type mapping:** `app-rewards` filter uses `appOnly` platform field instead of `rewardType` — cleaner semantic mapping.
+- **Filter integration:** Filters apply before sorting in SearchResults. `filteredPlatforms` feeds into `sortedPlatforms` chain. FilterBar only renders post-stream (`isDone`) to avoid confusing mid-search state.
