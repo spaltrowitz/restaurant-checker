@@ -241,3 +241,10 @@ The following learnings come from Backend agents across Shari's other personal p
 - Editorial platforms (Infatuation, Eater) use `rewardType: "deals"` to distinguish from direct-discount platforms.
 
 **Tests: 80 → 125 (all pass). Build green. Commit: c549cd4.**
+
+## Cross-Team Context — 2026-05-06
+
+**From Redfoot:** 2,370 unique restaurants identified across 4 platforms. Bilt+Rewards Network ~71% overlap. Top-500 pre-cache built. This enables caching optimizations in batch search — frequent queries will hit pre-cache instead of full search.
+
+**From McManus:** All 125 tests passing, including 45 new tests for query tuning, new platforms, and deal extraction. Regression-free.
+

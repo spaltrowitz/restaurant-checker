@@ -141,3 +141,10 @@ The following learnings come from Tester agents across Shari's other personal pr
   - NYC location filter integration with new platforms: each new platform tested for non-NYC rejection and NYC-indicator allowance — 9 tests
 - **Test data lesson:** When writing NYC filter tests, avoid mentioning "NYC" in snippets for non-NYC test cases (e.g., "brings its NYC magic to Las Vegas" triggers the NYC indicator and passes). Keep test fixture text clean of cross-contamination.
 - **Pattern confirmed:** `evaluateSearchResults()` applies `isNonNYCResult` uniformly to all platforms — new platforms get location filtering automatically with no extra code.
+
+## Cross-Team Context — 2026-05-06
+
+**From Fenster:** 4 new platforms integrated (Groupon, LivingSocial, Infatuation, Eater) with deal extraction. Query tuning for inKind and Rakuten. 14 batch queries per search (from 10).
+
+**From Redfoot:** Cross-reference analysis quantifies that Bilt+Rewards Network cover 71% overlap, so test optimization opportunities exist — some platform combinations are correlated.
+

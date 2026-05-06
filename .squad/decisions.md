@@ -354,3 +354,134 @@ Pursue B2B partnerships with Nea, Seated, and Upside to unlock read-only API or 
 | Durable technical solution | May take 4-6 weeks vs. 1 week to ship scraper |
 | Relationship asset | Requires executive buy-in on their side |
 | Real-time data | Potential rate limits or API deprecation |
+
+---
+
+# Decision: Brave Search Improvements — Query Tuning, New Platforms, Deal Extraction
+
+**Author:** Fenster (Backend Dev)  
+**Date:** 2026-05-06  
+**Status:** Implemented
+
+---
+
+## Context
+
+Three areas of Brave Search needed improvement:
+1. inKind had 0% hit rate due to poor site indexing with `site:` restriction
+2. Rakuten Dining returned French shopping false positives
+3. Web search results showed only page titles with no earning/deal information
+
+---
+
+## Decisions
+
+### 1. skipSiteOperator flag for poorly-indexed platforms
+Added `skipSiteOperator?: boolean` to Platform interface. When true, `batchSearch()` omits the `site:` operator from the Brave query but still uses `domainFilter` for result URL validation. Only inKind uses this currently. Query changes from `"Carbone" site:inkind.com` to `"Carbone" inkind dining`.
+
+### 2. Path-based domainFilter for Rakuten
+Changed Rakuten Dining's `domainFilter` from `rakuten.com` to `rakuten.com/dining`. This filters out non-dining Rakuten pages (shopping, French content) at the URL validation level.
+
+### 3. "deals" rewardType for editorial platforms
+Added `"deals"` to the `rewardType` union type. Infatuation and Eater are editorial platforms that cover dining deals/events — they don't offer direct discounts. This distinguishes them from discount/cashback platforms in the UI.
+
+### 4. extractDealDetails() for snippet enrichment
+New function extracts earning patterns (cashback %, points, dollar/percent off, miles) from search result title+snippet via regex. `evaluateSearchResults()` uses it to enrich the `details` field: `"Carbone Deal — 30% off"` instead of just `"Carbone Deal"`.
+
+### 5. 4 new platforms
+- Groupon Dining (`groupon.com/dining`) — cashback platform
+- LivingSocial (`livingsocial.com/deals`) — flash deal platform
+- Infatuation (`theinfatuation.com`) — editorial/deals platform
+- Eater (`eater.com`) — editorial/deals platform
+
+---
+
+## Trade-offs
+
+- **inKind broader search:** May return more noise (non-inKind results mentioning "inkind"), but `domainFilter` catches those. Better than 0% hit rate.
+- **Rakuten path filter:** `site:rakuten.com/dining` may be too restrictive if Rakuten changes URL structure. But it eliminates the false positive class completely.
+- **Deal extraction regex:** Pattern-based — won't catch every deal format. Designed to be additive (enriches when found, harmless fallback when not).
+- **4 new platforms:** More Brave API calls per search (10 → 14 batch queries). Mitigated by prefetch cache and 1-hour in-memory cache.
+
+---
+
+## Files Modified
+- `lib/platforms.ts` — 4 new platforms, `skipSiteOperator` field, `"deals"` rewardType, Rakuten domainFilter
+- `lib/checkers.ts` — `extractDealDetails()`, `skipSiteOperator` logic in `batchSearch()`, enriched details in `evaluateSearchResults()`
+- `lib/__tests__/checkers.test.ts` — 45 new tests (80 → 125, all passing)
+
+---
+
+# Decision: Data Enrichment — Cross-Reference Coverage Analysis
+
+**Author:** Redfoot (Platform SME)  
+**Date:** 2026-05-06  
+**Status:** Implemented
+
+---
+
+## Coverage Summary
+
+| Platform | Unique Restaurants | Dump Date |
+|----------|-------------------|-----------|
+| Bilt Rewards | 1,787 | 2026-05-06 |
+| Rewards Network | 1,705 | 2026-05-06 |
+| Upside | 170 | 2026-05-06 |
+| Blackbird | 50 (Denver-only) | 2026-05-06 |
+| **True Unique Total** | **2,370** | — |
+| Raw (with dupes) | 4,041 | — |
+
+The 4,041 headline includes ~1,671 duplicates across platforms. **True unique NYC coverage is 2,370 distinct restaurants**.
+
+---
+
+## Key Findings
+
+### Pairwise Overlap
+- **Bilt ∩ Rewards Network:** 1,209 restaurants (70.9% of smaller set) — largest overlap
+- **Bilt ∩ Upside:** 124 restaurants (72.9% of Upside)
+- **Rewards Network ∩ Upside:** 107 restaurants (62.9% of Upside)
+- **Bilt/RN/Upside ∩ Blackbird:** 0 overlap (Blackbird is Denver-focused)
+
+### Exclusivity Breakdown
+- **Bilt-only:** 552 restaurants
+- **RN-only:** 487 restaurants
+- **Upside-only:** 37 restaurants
+- **On 2+ platforms:** 1,244 restaurants
+- **On 3+ platforms (Bilt+RN+Upside):** 98 restaurants
+
+---
+
+## Top-500 List Build
+
+Created `scripts/build-top-500.ts` to cross-reference and score restaurants:
+- **Scoring:** Multi-platform presence (10pts/platform), existing list membership (25pts), Bilt+RN agreement (5pts), triple-platform bonus (15pts)
+- **Composition:** 483 newly added multi-platform matches + 17 existing curated restaurants = 500 total
+- **Note:** Only 17 of original 150 curated appear in API dumps; 133 are high-end venues (Carbone, Le Bernardin, Per Se) without cashback platforms
+
+---
+
+## Recommendations
+
+### 1. Two-Tier Popular Lists
+- **Showcase tier:** 150 well-known names (marketing, breadth, demo searches)
+- **Pre-cache tier:** 500 deal-confirmed restaurants (instant results for high-probability queries)
+
+### 2. Refresh Cadence
+Weekly API dumps + top-500 rebuild via `dump-api-data.ts` and `build-top-500.ts`.
+
+### 3. Accurate Counts
+Don't claim "4,041 restaurants" — true unique is ~2,370 (even less for NYC-focused: ~2,200 excluding Blackbird).
+
+### 4. Upside Value
+Only 37 unique restaurants, but 72.9% Bilt overlap means these are mainstream venues where users stack discounts.
+
+---
+
+## Files Created/Modified
+- `scripts/build-top-500.ts` — Cross-reference scoring script
+- `data/popular-restaurants.ts` — Expanded to 500 restaurants
+- `data/cross-ref-analysis.json` — Raw analysis data
+
+---
+

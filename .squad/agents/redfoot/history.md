@@ -74,3 +74,10 @@ Partner with Kobayashi on outreach sequencing. Confirm inKind + Rakuten interest
 - Top neighborhoods by density: Hell's Kitchen (66), Chelsea (55), Midtown East (52), Williamsburg (43), West Village (40).
 - Name normalization matters: punctuation, apostrophes, and location suffixes cause false non-matches. The norm() function strips to alphanumeric+spaces.
 - Recommend two-tier popular list: showcase tier (famous names for demos) + pre-cache tier (deal-confirmed restaurants for instant results).
+
+## Cross-Team Context — 2026-05-06
+
+**From Fenster:** 4 new platforms added (Groupon, LivingSocial, Infatuation, Eater) requiring data enrichment. Deal extraction feature enabled snippet parsing for earning details.
+
+**From McManus:** 125 tests now covering all platforms. Test coverage enables future data enrichment validation.
+
