@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { CheckResult, getPlatform } from "@/lib/platforms";
 import { PlatformExplainer } from "./PlatformExplainer";
+import { FavoriteButton } from "./FavoriteButton";
 
 interface CommunityReportInfo {
   count: number;
@@ -163,7 +164,8 @@ export function ResultCard({
       : "hover:shadow-lg hover:shadow-blue-500/10";
 
     return (
-      <div className={`flex items-start gap-4 rounded-xl ${borderClass} ${bgClass} p-5 animate-fade-in-up transition-all duration-300 ${shadowClass}`}>
+      <div className={`relative flex items-start gap-4 rounded-xl ${borderClass} ${bgClass} p-5 animate-fade-in-up transition-all duration-300 ${shadowClass}`}>
+        {restaurantName && <FavoriteButton name={restaurantName} />}
         <span className="mt-0.5 text-xl" aria-label="Found" role="img">✅</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -235,7 +237,8 @@ export function ResultCard({
   // SEARCH UNAVAILABLE state — amber/warning
   if (result.searchUnavailable) {
     return (
-      <div className="flex items-start gap-4 rounded-xl border-2 border-[var(--color-warning)]/30 bg-gradient-to-br from-[var(--color-warning-dim)] to-[var(--color-surface-raised)] p-5 animate-fade-in-up transition-all duration-300 hover:border-[var(--color-warning)]/50 hover:shadow-lg hover:shadow-amber-500/10">
+      <div className="relative flex items-start gap-4 rounded-xl border-2 border-[var(--color-warning)]/30 bg-gradient-to-br from-[var(--color-warning-dim)] to-[var(--color-surface-raised)] p-5 animate-fade-in-up transition-all duration-300 hover:border-[var(--color-warning)]/50 hover:shadow-lg hover:shadow-amber-500/10">
+        {restaurantName && <FavoriteButton name={restaurantName} />}
         <span className="mt-0.5 text-xl" aria-label="Manual check needed" role="img">🔗</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -273,7 +276,8 @@ export function ResultCard({
 
   // NOT FOUND state — subtle, collapsed feel
   return (
-    <div className="flex items-start gap-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-60 animate-fade-in transition-all duration-300 hover:opacity-90 hover:border-[var(--color-border)]">
+    <div className="relative flex items-start gap-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-60 animate-fade-in transition-all duration-300 hover:opacity-90 hover:border-[var(--color-border)]">
+      {restaurantName && <FavoriteButton name={restaurantName} />}
       <span className="mt-0.5 text-lg text-[var(--color-text-muted)]" aria-label="Not found" role="img">—</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">

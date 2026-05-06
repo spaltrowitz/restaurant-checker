@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useFavoritesOptional } from "@/hooks/useFavorites";
 
 export function Nav() {
   const pathname = usePathname();
+  const { favorites } = useFavoritesOptional();
+  const count = favorites.length;
 
   return (
     <nav className="border-b border-[var(--color-border)] bg-[var(--color-surface)]" aria-label="Main navigation">
@@ -33,6 +36,18 @@ export function Nav() {
             {...(pathname === "/browse" ? { "aria-current": "page" as const } : {})}
           >
             Browse
+          </Link>
+          <Link
+            href="/favorites"
+            className={`relative transition-colors ${pathname === "/favorites" ? "text-[var(--color-gold)] font-medium" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}
+            {...(pathname === "/favorites" ? { "aria-current": "page" as const } : {})}
+          >
+            ❤️ Favorites
+            {count > 0 && (
+              <span className="absolute -top-2 -right-4 inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold text-white leading-none">
+                {count > 9 ? "9+" : count}
+              </span>
+            )}
           </Link>
           <Link
             href="/about"
