@@ -28,6 +28,13 @@ export function Nav() {
             Platforms
           </Link>
           <Link
+            href="/browse"
+            className={`transition-colors ${pathname === "/browse" ? "text-[var(--color-gold)] font-medium" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}
+            {...(pathname === "/browse" ? { "aria-current": "page" as const } : {})}
+          >
+            Browse
+          </Link>
+          <Link
             href="/about"
             className={`transition-colors ${pathname === "/about" ? "text-[var(--color-gold)] font-medium" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}
             {...(pathname === "/about" ? { "aria-current": "page" as const } : {})}

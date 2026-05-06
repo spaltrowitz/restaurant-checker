@@ -43,6 +43,7 @@ export default function Home() {
             <div className="flex gap-6 text-xs text-[var(--color-text-muted)]">
               <Link href="/about" className="hover:text-[var(--color-text-secondary)] transition-colors">About</Link>
               <Link href="/platforms" className="hover:text-[var(--color-text-secondary)] transition-colors">Platforms</Link>
+              <Link href="/browse" className="hover:text-[var(--color-text-secondary)] transition-colors">Browse</Link>
             </div>
           </div>
         </div>

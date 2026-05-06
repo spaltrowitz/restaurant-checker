@@ -3,7 +3,9 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
+import { findBestDeal } from "@/lib/best-deal";
 import { ResultCard } from "./ResultCard";
+import { BestDealCard } from "./BestDealCard";
 
 interface CommunityReportInfo {
   count: number;
@@ -351,6 +353,17 @@ function SearchResultsInner() {
           </p>
         </div>
       )}
+
+      {!error && isDone && (() => {
+        const bestDealResult = findBestDeal(resultsArr);
+        if (!bestDealResult) return null;
+        return (
+          <BestDealCard
+            best={bestDealResult.best}
+            otherDealsCount={bestDealResult.otherDealsCount}
+          />
+        );
+      })()}
 
       {!error && celebrationSummary}
 
