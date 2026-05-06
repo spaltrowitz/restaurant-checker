@@ -363,16 +363,6 @@ interface NeighborhoodSummary {
   restaurantCount: number;
 }
 
-interface NeighborhoodDetail {
-  slug: string;
-  name: string;
-  restaurants: {
-    name: string;
-    address: string;
-    platforms: Record<string, { deal: string; url: string }>;
-  }[];
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const neighborhoodSlug = searchParams.get("neighborhood");
@@ -409,10 +399,20 @@ export async function GET(request: NextRequest) {
       Object.keys(b.platforms).length - Object.keys(a.platforms).length
     );
 
-    const detail: NeighborhoodDetail = {
+    // Pagination
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10) || 50));
+    const startIdx = (page - 1) * limit;
+    const paged = restaurants.slice(startIdx, startIdx + limit);
+
+    const detail = {
       slug: slugify(matchedName),
       name: matchedName,
-      restaurants: restaurants.map((r) => ({
+      totalRestaurants: restaurants.length,
+      page,
+      limit,
+      totalPages: Math.ceil(restaurants.length / limit),
+      restaurants: paged.map((r) => ({
         name: r.name,
         address: r.address,
         platforms: r.platforms,
