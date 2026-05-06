@@ -130,11 +130,12 @@ export async function checkBlackbird(name: string): Promise<CheckResult> {
 const UPSIDE_API_URL =
   "https://pdjc6srrfb.execute-api.us-east-1.amazonaws.com/prod/offers/refresh";
 
+// All 5 NYC boroughs: Staten Island to the Bronx, Brooklyn to Queens
 const NYC_BOUNDING_BOX = {
-  southWestLat: 40.7,
-  southWestLon: -74.02,
-  northEastLat: 40.82,
-  northEastLon: -73.93,
+  southWestLat: 40.49,
+  southWestLon: -74.26,
+  northEastLat: 40.92,
+  northEastLon: -73.68,
 };
 
 async function getUpsideOffers(): Promise<UpsideOffer[]> {
@@ -194,7 +195,7 @@ export async function checkUpside(name: string): Promise<CheckResult> {
     return {
       platform: "Upside",
       found: false,
-      details: "Not found on Upside in NYC area",
+      details: "Not found on Upside in NYC (all 5 boroughs)",
       method: "api",
       url: platform.url,
       matches: [],
