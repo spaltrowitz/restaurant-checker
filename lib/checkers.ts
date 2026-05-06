@@ -741,6 +741,12 @@ const NON_NYC_LOCATIONS = [
   "denver", "portland", "las vegas", "san diego", "austin",
   "nashville", "detroit", "minneapolis", "phoenix", "tampa",
   "charlotte", "raleigh", "salt lake", "cedar park",
+  "san jose", "sacramento", "orlando", "new orleans", "pittsburgh",
+  "baltimore", "cleveland", "cincinnati", "kansas city", "indianapolis",
+  "milwaukee", "scottsdale", "boca raton",
+  // Non-NYC neighborhoods
+  "marina district", "back bay", "south beach", "venice beach",
+  "capitol hill", "french quarter", "buckhead", "river north",
   // Non-US
   "london", "paris", "tokyo", "penzance", "montville",
 ];
@@ -753,10 +759,30 @@ const NYC_INDICATORS = [
   "long island city", "flushing", "park slope",
 ];
 
+// NYC zip code ranges
+function isNYCZipCode(zip: string): boolean {
+  const z = parseInt(zip, 10);
+  if (isNaN(z)) return false;
+  // Manhattan/Bronx: 10001-10292, Staten Island: 10301-10314
+  if (z >= 10001 && z <= 10314) return true;
+  // Queens/Brooklyn: 11001-11256
+  if (z >= 11001 && z <= 11256) return true;
+  return false;
+}
+
 export function isNonNYCResult(title: string, snippet: string, href: string): boolean {
   const combined = `${title} ${snippet}`.toLowerCase();
   const hasNYC = NYC_INDICATORS.some((ind) => combined.includes(ind));
   if (hasNYC) return false;
+
+  // Check for non-NYC zip codes in snippet
+  const zipMatches = combined.match(/\b(\d{5})\b/g);
+  if (zipMatches) {
+    for (const zip of zipMatches) {
+      if (!isNYCZipCode(zip)) return true;
+    }
+  }
+
   const hasNonNYC = NON_NYC_LOCATIONS.some((loc) => combined.includes(loc));
   return hasNonNYC;
 }
@@ -785,6 +811,27 @@ export function extractDealDetails(title: string, snippet: string): string | nul
   }
 
   return found.length > 0 ? found.join(", ") : null;
+}
+
+// Reject generic roundup/listicle pages that mention restaurant names incidentally
+function isGenericListPage(title: string, snippet: string): boolean {
+  const combined = `${title} ${snippet}`.toLowerCase();
+  const patterns = [
+    /top \d+ restaurants/,
+    /best restaurants in/,
+    /\d+ places to eat/,
+    /dining guide/,
+    /restaurant guide/,
+    /where to eat/,
+  ];
+  return patterns.some((p) => p.test(combined));
+}
+
+// Reject aggregator URLs that aren't actual platform listings
+function isAggregatorPage(href: string): boolean {
+  const lowerHref = href.toLowerCase();
+  const aggregatorPaths = ["/article/", "/guide/", "/list/", "/best-of/", "/roundup/"];
+  return aggregatorPaths.some((p) => lowerHref.includes(p));
 }
 
 // Convert raw search results into a CheckResult for a platform
@@ -818,6 +865,14 @@ export function evaluateSearchResults(
     if (isNoResultsPage(r.title, r.snippet)) {
       continue;
     }
+    // Skip snippets too short to be meaningful
+    if (r.snippet.length < 30) {
+      continue;
+    }
+    // Skip generic roundup/listicle pages
+    if (isGenericListPage(r.title, r.snippet)) {
+      continue;
+    }
     // Skip generic blog/help pages that mention restaurant names incidentally
     const lowerHref = r.href.toLowerCase();
     if (
@@ -827,6 +882,10 @@ export function evaluateSearchResults(
       lowerHref.includes("/faq/") ||
       lowerHref.includes("/hc/en-us/")
     ) {
+      continue;
+    }
+    // Skip aggregator article/guide pages
+    if (isAggregatorPage(r.href)) {
       continue;
     }
     if (

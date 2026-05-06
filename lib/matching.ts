@@ -4,6 +4,10 @@ export function norm(text: string): string {
     .replace(/ß/g, "ss")
     .replace(/æ/g, "ae")
     .replace(/œ/g, "oe")
+    // Normalize all apostrophe variants to empty before NFD
+    .replace(/[''`\u2019]/g, "")
+    // Normalize ampersands: '&' → 'and'
+    .replace(/&/g, "and")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9\s]/g, "")

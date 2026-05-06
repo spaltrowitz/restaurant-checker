@@ -31,7 +31,7 @@ describe("norm()", () => {
   });
 
   it("strips special characters (& etc.)", () => {
-    expect(norm("Café & Bar")).toBe("cafe  bar");
+    expect(norm("Café & Bar")).toBe("cafe and bar");
   });
 
   it("is idempotent on already-lowercase ASCII", () => {
@@ -192,6 +192,34 @@ describe("matchesRestaurant()", () => {
     expect(matchesRestaurant("Tatiana is a great spot", "Tatiana")).toBe(true);
     expect(matchesRestaurant("unrelated text", "Tatiana")).toBe(false);
   });
+
+  it("handles D'Angelo with apostrophe variants", () => {
+    expect(matchesRestaurant("try dangelo tonight", "D'Angelo")).toBe(true);
+    expect(matchesRestaurant("try dangelo tonight", "D\u2019Angelo")).toBe(true);
+    expect(matchesRestaurant("try dangelo tonight", "D`Angelo")).toBe(true);
+  });
+
+  it("handles L'Artusi with all apostrophe variants", () => {
+    expect(matchesRestaurant("lartusi is amazing", "L\u2019Artusi")).toBe(true);
+    expect(matchesRestaurant("lartusi is amazing", "L`Artusi")).toBe(true);
+  });
+
+  it("handles McCormick & Schmick's with ampersand equivalence", () => {
+    expect(matchesRestaurant("mccormick and schmicks seafood", "McCormick & Schmick's")).toBe(true);
+    expect(matchesRestaurant("mccormick and schmicks seafood", "McCormick and Schmick's")).toBe(true);
+  });
+
+  it("handles Café Boulud with diacritics", () => {
+    expect(matchesRestaurant("visit cafe boulud for brunch", "Café Boulud")).toBe(true);
+  });
+
+  it("handles José Andrés with diacritics", () => {
+    expect(matchesRestaurant("jose andres new restaurant", "José Andrés")).toBe(true);
+  });
+
+  it("handles Señor Pollo with ñ", () => {
+    expect(matchesRestaurant("senor pollo has great chicken", "Señor Pollo")).toBe(true);
+  });
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -328,7 +356,7 @@ describe("evaluateSearchResults()", () => {
         {
           title: "Carbone on Blackbird",
           href: "https://blackbird.xyz/spots/carbone",
-          snippet: "Earn FLY at Carbone",
+          snippet: "Earn FLY rewards at Carbone in NYC tonight",
         },
       ],
       blocked: false,
@@ -343,7 +371,7 @@ describe("evaluateSearchResults()", () => {
         {
           title: "Carbone",
           href: "example.com/carbone",
-          snippet: "Carbone page",
+          snippet: "Carbone page for fine dining reservations",
         },
       ],
       blocked: false,

@@ -1,4 +1,4 @@
-import { PLATFORMS, detectCardConflicts } from "@/lib/platforms";
+import { PLATFORMS, detectCardConflicts, CheckResult } from "@/lib/platforms";
 import {
   checkBlackbird,
   checkUpside,
@@ -32,11 +32,31 @@ export async function GET(request: Request) {
         const foundPlatforms: string[] = [];
 
         // Run Blackbird sitemap check, Upside API check, Bilt API check, Rewards Network API check, and batch web search in parallel
+        // Each API checker has its own internal timeout; wrap with 10s race to prevent hangs
+        const withTimeout = <T>(promise: Promise<T>, fallback: T): Promise<T> =>
+          Promise.race([
+            promise,
+            new Promise<T>((resolve) => setTimeout(() => resolve(fallback), 10_000)),
+          ]);
+
+        const blackbirdFallback: CheckResult = {
+          platform: "Blackbird", found: false, details: "Blackbird check timed out", method: "error" as const, url: "https://www.blackbird.xyz", matches: [], searchUnavailable: true,
+        };
+        const upsideFallback: CheckResult = {
+          platform: "Upside", found: false, details: "Upside check timed out — try the app directly", method: "error" as const, url: "https://www.upside.com", matches: [], searchUnavailable: true,
+        };
+        const biltFallback: CheckResult = {
+          platform: "Bilt Rewards", found: false, details: "Bilt check timed out — try the app directly", method: "error" as const, url: "https://www.biltrewards.com/dining", matches: [], searchUnavailable: true,
+        };
+        const rnFallback: CheckResult = {
+          platform: "Rewards Network", found: false, details: "Rewards Network check timed out", method: "error" as const, url: "https://aadvantagedining.com", matches: [], searchUnavailable: true,
+        };
+
         const [blackbirdResult, upsideResult, biltResult, rewardsNetworkResult, searchResults] = await Promise.all([
-          checkBlackbird(query),
-          checkUpside(query),
-          checkBilt(query),
-          checkRewardsNetwork(query),
+          withTimeout(checkBlackbird(query), blackbirdFallback),
+          withTimeout(checkUpside(query), upsideFallback),
+          withTimeout(checkBilt(query), biltFallback),
+          withTimeout(checkRewardsNetwork(query), rnFallback),
           batchSearch(query),
         ]);
 

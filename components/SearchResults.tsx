@@ -6,6 +6,7 @@ import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "
 import { findBestDeal } from "@/lib/best-deal";
 import { ResultCard } from "./ResultCard";
 import { BestDealCard } from "./BestDealCard";
+import { FilterBar, useFilterState } from "./FilterBar";
 
 interface CommunityReportInfo {
   count: number;
@@ -35,6 +36,7 @@ function SearchResultsInner() {
   const [isSearching, setIsSearching] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useFilterState();
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -54,7 +56,7 @@ function SearchResultsInner() {
   }, []);
 
   const performFetch = useCallback(async (q: string, controller: AbortController) => {
-    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+    const timeoutId = setTimeout(() => controller.abort(), 60_000);
 
     try {
       const resp = await fetch(`/api/check?q=${encodeURIComponent(q)}`, {
@@ -213,8 +215,35 @@ function SearchResultsInner() {
     return parts.join(" — ");
   };
 
+  // Filter platforms based on active filters
+  const filterPlatform = (p: typeof PLATFORMS[number]) => {
+    // Card-free filter
+    if (filters.cardFreeOnly && p.cardLink) return false;
+    // Reward type filter
+    if (filters.rewardType !== "all") {
+      const typeMap: Record<string, string[]> = {
+        cashback: ["cashback"],
+        points: ["points"],
+        discounts: ["credit", "discount", "deals"],
+        "app-rewards": ["cashback", "points", "credit", "discount", "deals"],
+      };
+      if (filters.rewardType === "app-rewards") {
+        if (!p.appOnly) return false;
+      } else {
+        const allowed = typeMap[filters.rewardType] ?? [];
+        if (!allowed.includes(p.rewardType)) return false;
+      }
+    }
+    return true;
+  };
+
+  const filteredPlatforms = PLATFORMS.filter(filterPlatform);
+
   // Tiered sorting: API found → Web search found → manual-check → not-found
-  const sortedPlatforms = [...PLATFORMS].sort((a, b) => {
+  const sortedPlatforms = [...filteredPlatforms].sort((a, b) => {
+    // Name sort overrides relevance
+    if (filters.sortBy === "name") return a.name.localeCompare(b.name);
+
     const aResult = results.get(a.name);
     const bResult = results.get(b.name);
     
@@ -352,6 +381,10 @@ function SearchResultsInner() {
             {checkedCount}/{PLATFORMS.length}
           </p>
         </div>
+      )}
+
+      {!error && isDone && (
+        <FilterBar filters={filters} onChange={setFilters} />
       )}
 
       {!error && isDone && (() => {

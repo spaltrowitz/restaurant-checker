@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CheckResult, getPlatform } from "@/lib/platforms";
+import { PlatformExplainer } from "./PlatformExplainer";
 
 interface CommunityReportInfo {
   count: number;
@@ -81,6 +82,30 @@ function ReportButton({
   );
 }
 
+function ExplainerButton({ platformName }: { platformName: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  return (
+    <span className="relative inline-flex">
+      <button
+        ref={buttonRef}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label={`How ${platformName} works`}
+        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:bg-[var(--color-surface-overlay)] transition-colors text-xs"
+      >
+        ℹ️
+      </button>
+      <PlatformExplainer
+        platformName={platformName}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        anchorRef={buttonRef}
+      />
+    </span>
+  );
+}
+
 export function ResultCard({
   result,
   platformName,
@@ -143,6 +168,7 @@ export function ResultCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-bold text-[var(--color-text-primary)]">{platformName}</p>
+            <ExplainerButton platformName={platformName} />
             {platform && (
               <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-3 py-1 text-xs font-semibold text-[var(--color-gold)] ring-1 ring-[var(--color-gold)]/30">
                 {platform.rewardEmoji} {platform.rewardLabel}
@@ -214,6 +240,7 @@ export function ResultCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-bold text-[var(--color-warning)]">{platformName}</p>
+            <ExplainerButton platformName={platformName} />
             {platform && (
               <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-3 py-1 text-xs font-semibold text-[var(--color-text-secondary)] ring-1 ring-[var(--color-border)]">
                 {platform.rewardEmoji} {platform.rewardLabel}
@@ -251,6 +278,7 @@ export function ResultCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-medium text-[var(--color-text-muted)]">{platformName}</p>
+          <ExplainerButton platformName={platformName} />
           {communityReport && <CommunityBadge report={communityReport} />}
         </div>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">{result.details}</p>

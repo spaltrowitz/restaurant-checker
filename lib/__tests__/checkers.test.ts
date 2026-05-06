@@ -585,7 +585,7 @@ describe("evaluateSearchResults() with Brave Search results", () => {
         {
           title: "Visit Carbone NYC",
           href: "https://example.com/restaurant",
-          snippet: "Great Italian food",
+          snippet: "Great Italian food in the heart of downtown Manhattan",
         },
       ],
       blocked: false,
@@ -598,7 +598,7 @@ describe("evaluateSearchResults() with Brave Search results", () => {
         {
           title: "Italian Restaurant",
           href: "https://example.com/restaurant",
-          snippet: "Carbone is a classic NYC spot",
+          snippet: "Carbone is a classic NYC spot with excellent pasta and wine selection",
         },
       ],
       blocked: false,
@@ -611,7 +611,7 @@ describe("evaluateSearchResults() with Brave Search results", () => {
         {
           title: "Restaurant Page",
           href: "https://example.com/carbone-nyc",
-          snippet: "Fine dining",
+          snippet: "Fine dining experience for the whole family tonight",
         },
       ],
       blocked: false,
@@ -630,12 +630,12 @@ describe("evaluateSearchResults() with Brave Search results", () => {
         {
           title: "Carbone Restaurant",
           href: "https://yelp.com/biz/carbone",
-          snippet: "Carbone reviews",
+          snippet: "Carbone reviews from locals and visitors in NYC area",
         },
         {
           title: "Carbone on inKind",
           href: "https://inkind.com/carbone",
-          snippet: "Book with credit",
+          snippet: "Book with credit and save on your next visit to Carbone",
         },
       ],
       blocked: false,
@@ -654,7 +654,7 @@ describe("evaluateSearchResults() with Brave Search results", () => {
         {
           title: "Carbone",
           href: "example.com/carbone", // No protocol
-          snippet: "Restaurant",
+          snippet: "Restaurant page for Carbone with full menu and details",
         },
       ],
       blocked: false,
@@ -707,13 +707,13 @@ describe("evaluateSearchResults() with Brave Search results", () => {
     });
     expect(emptyTitle.found).toBe(false);
 
-    // Title with restaurant name still works
+    // Title with restaurant name still works (snippet must be ≥30 chars)
     const withTitle = evaluateSearchResults(platform, "Carbone", {
       results: [
         {
           title: "Carbone",
           href: "https://example.com/carbone",
-          snippet: "",
+          snippet: "Visit Carbone for an unforgettable dining experience",
         },
       ],
       blocked: false,
@@ -1283,7 +1283,7 @@ describe("NYC location filter with new platforms", () => {
         {
           title: "Nobu Restaurant Deal | LivingSocial",
           href: "https://www.livingsocial.com/deals/nobu-nyc",
-          snippet: "Dine at Nobu in Tribeca, NYC",
+          snippet: "Dine at Nobu in Tribeca, NYC — exclusive deals and discounts",
         },
       ],
       blocked: false,
