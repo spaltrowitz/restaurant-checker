@@ -15,7 +15,7 @@ export default function AboutPage() {
 
         <div className="space-y-5 text-[var(--color-text-secondary)] leading-relaxed text-base">
           <p>
-            There are <span className="text-[var(--color-text-primary)] font-medium">9 dining discount platforms</span> and <span className="text-[var(--color-gold)] font-medium">12+ reward programs</span> for NYC restaurants — Blackbird, Upside, inKind, Bilt, Rakuten Dining, Too Good To Go, Rewards Network (powering American Airlines, United, Delta, Southwest, JetBlue, Hilton, Marriott, and Hyatt), Pulsd, and more. Points, airline miles, hotel points, cashback, credits, surprise bags, prepaid dining deals.
+            There are <span className="text-[var(--color-text-primary)] font-medium">10 dining discount platforms</span> and <span className="text-[var(--color-gold)] font-medium">12+ reward programs</span> for NYC restaurants — Blackbird, Upside, inKind, Bilt, Rakuten Dining, Too Good To Go, Rewards Network (powering American Airlines, United, Delta, Southwest, JetBlue, Hilton, Marriott, and Hyatt), Pulsd, Restaurant.com, and more. Points, airline miles, hotel points, cashback, credits, surprise bags, prepaid dining deals.
           </p>
           <p>
             When you&apos;re heading out to eat, you shouldn&apos;t have to open 5+ apps to make sure you&apos;re not leaving money on the table. But that&apos;s exactly what it takes.
@@ -34,7 +34,7 @@ export default function AboutPage() {
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-gold)]/15 text-[var(--color-gold)] text-xs font-bold flex items-center justify-center mt-0.5">2</span>
-              <span>We check <strong className="text-[var(--color-text-primary)]">9 platforms</strong> in parallel — 4 via verified APIs, 5 via web search</span>
+              <span>We check <strong className="text-[var(--color-text-primary)]">10 platforms</strong> in parallel — 4 via verified APIs, 6 via web search</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-gold)]/15 text-[var(--color-gold)] text-xs font-bold flex items-center justify-center mt-0.5">3</span>

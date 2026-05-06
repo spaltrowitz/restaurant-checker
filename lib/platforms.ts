@@ -170,6 +170,21 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "restaurant dining deal NYC",
     domainFilter: "pulsd.com",
   },
+  {
+    name: "Restaurant.com",
+    url: "https://www.restaurant.com",
+    appOnly: false,
+    rewardType: "discount",
+    rewardEmoji: "🎟️",
+    rewardLabel: "Discount certificates",
+    offerType:
+      "Discount: prepaid dining certificates at 50-80% off face value",
+    personalized: false,
+    cardLink: false,
+    cardConflict: false,
+    searchQuery: "restaurant dining certificate NYC",
+    domainFilter: "restaurant.com",
+  },
 ];
 
 export const CARD_CONFLICT_GROUPS: string[][] = [];
