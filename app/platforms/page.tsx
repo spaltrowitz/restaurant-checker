@@ -16,6 +16,7 @@ function PlatformEmoji({ name }: { name: string }) {
     "Too Good To Go": "🥡",
     "Rewards Network": "✈️",
     "Seated": "💺",
+    "Pulsd": "🏷️",
   };
   return <span className="text-3xl">{emojis[name] ?? "🍽️"}</span>;
 }
@@ -34,7 +35,7 @@ export default function PlatformsPage() {
           </h1>
           <div className="w-16 h-0.5 bg-[var(--color-gold)] mt-4 opacity-50"></div>
           <p className="mt-4 text-[var(--color-text-secondary)]">
-            <span className="text-[var(--color-text-primary)] font-medium">8 platforms</span> ·{" "}
+            <span className="text-[var(--color-text-primary)] font-medium">9 platforms</span> ·{" "}
             <span className="text-[var(--color-gold)] font-medium">12+ reward programs</span> · checked in seconds
           </p>
         </div>

@@ -155,6 +155,21 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "",
     domainFilter: "",
   },
+  {
+    name: "Pulsd",
+    url: "https://pulsd.com",
+    appOnly: false,
+    rewardType: "discount",
+    rewardEmoji: "🏷️",
+    rewardLabel: "Discount (35-69% off)",
+    offerType:
+      "Curated: prepaid prix-fixe dining experiences at 35-69% off retail",
+    personalized: false,
+    cardLink: false,
+    cardConflict: false,
+    searchQuery: "restaurant dining deal NYC",
+    domainFilter: "pulsd.com",
+  },
 ];
 
 export const CARD_CONFLICT_GROUPS: string[][] = [];

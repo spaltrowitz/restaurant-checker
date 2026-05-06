@@ -9,7 +9,7 @@ A Next.js web UI that checks 8 discount platforms for any restaurant name. Resul
 ### Pages
 
 - **`/`** — Search page: type a restaurant name, see which platforms have it
-- **`/platforms`** — Info page: all 8 platforms with reward types, card linking, and conflicts
+- **`/platforms`** — Info page: all 9 platforms with reward types, card linking, and conflicts
 
 ### Quick Start
 

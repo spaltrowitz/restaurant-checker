@@ -37,7 +37,7 @@ export default function Home() {
                 <span className="text-[var(--color-gold)]">Eat</span>Discounted
               </p>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                NYC Dining Rewards Finder — 8 platforms, 12+ programs
+                NYC Dining Rewards Finder — 9 platforms, 12+ programs
               </p>
             </div>
             <div className="flex gap-6 text-xs text-[var(--color-text-muted)]">
