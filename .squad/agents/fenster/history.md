@@ -248,3 +248,25 @@ The following learnings come from Backend agents across Shari's other personal p
 
 **From McManus:** All 125 tests passing, including 45 new tests for query tuning, new platforms, and deal extraction. Regression-free.
 
+
+## Session: P0 Features — Best Deal Logic & Neighborhood Browse API
+
+**Feature 1: Best Deal Ranking Upgrade (`lib/best-deal.ts`)**
+- Replaced simple score-based ranking with tiered ranking: API results with explicit earning rates (Bilt multipliers, RN miles) → other API/sitemap → web search with extracted deal details → web search titles only
+- Added `savingsEstimate` field to BestDeal interface (extracted from deal details text)
+- Maintained backward compatibility with existing `rewardLabel`, `rewardEmoji`, and `{ best, otherDealsCount }` return shape used by BestDealCard component
+
+**Feature 2: Neighborhood Browse API (`app/api/browse/route.ts`)**
+- New GET /api/browse endpoint reading from pre-computed dump JSONs (bilt, rewards-network, upside)
+- 80+ NYC zip code → neighborhood mapping covering Manhattan, Brooklyn, Queens, Bronx, Staten Island
+- Returns neighborhoods sorted by restaurant count (busiest first)
+- ?neighborhood=slug filter returns restaurants with per-platform deal details
+- In-memory cache with 5-min TTL for instant responses
+- Data shape: each restaurant has name, address, neighborhood, and platforms map with deal + url
+
+## Learnings
+- Rewards Network dump has address data nested in `raw.location.address`, not top-level
+- Upside dump has addresses in `raw.siteLocation`, and names sometimes only in `raw.text` (top-level name can be empty)
+- Bilt has the richest data: zip, neighborhood, multiplier, cuisine — ideal for browse features
+- Rewards Network has no top-level address fields — must parse from raw.location.address
+- All 125 existing tests pass, build passes clean

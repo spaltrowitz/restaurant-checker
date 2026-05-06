@@ -107,3 +107,10 @@ Hockney completed 5 sessions: ship-readiness evaluation (audit findings), critic
 - **Footer:** Simple flex layout with `sm:flex-row` responsive. Links to About/Platforms. Brand name + tagline.
 - **Platform emoji mapping:** Hardcoded emoji map in Platforms page component — good enough, doesn't need to be in data model.
 - **Platforms grouped by integration type:** API vs Web Search grouping makes the page scannable and communicates data quality at a glance.
+
+### P0 UI Features — Best Deal + Browse (2026-07)
+- **Best Deal Card:** Placed above celebration summary in SearchResults. Uses `findBestDeal()` from `lib/best-deal.ts` — scores by method (API=100, web=50) + details length. Spring animation (`cubic-bezier(0.34, 1.56, 0.64, 1)`) for the scale-up gives it a satisfying pop.
+- **Amber/gold theming:** `border-amber-500/40`, `bg-gradient-to-br from-amber-900/20` — warm without clashing with the existing green (found) and blue (web search) card tiers.
+- **Browse page:** `/browse` with `max-w-4xl` (wider than search's `max-w-2xl`) since it's a grid layout. Responsive 3/2/1 columns. Expanded neighborhood spans full width via `col-span-*`.
+- **Platform color badges:** Hardcoded color map per platform — Bilt=blue, RN=sky, Upside=green, Blackbird=purple, etc. Falls back to neutral surface colors for unknown platforms.
+- **Nav pattern:** Followed exact existing pattern — `aria-current="page"`, gold active text, secondary hover. Added Browse between Platforms and About.
