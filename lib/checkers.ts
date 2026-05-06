@@ -255,7 +255,7 @@ type RewardsNetworkMerchant = {
   designation?: string;
 };
 
-let rewardsNetworkCache: CacheEntry<RewardsNetworkMerchant[]> | null = null;
+let rewardsNetworkCache = new Map<string, CacheEntry<RewardsNetworkMerchant[]>>();
 const REWARDS_NETWORK_CACHE_TTL = 3_600_000; // 1 hour
 const REWARDS_NETWORK_API_URL =
   "https://aadvantagedining.com/api/v2/Merchants/Search";
@@ -264,17 +264,21 @@ async function getRewardsNetworkMerchants(
   query: string
 ): Promise<RewardsNetworkMerchant[]> {
   const cacheKey = `rn::${norm(query)}`;
-  if (rewardsNetworkCache && Date.now() < rewardsNetworkCache.expiresAt) {
+  const cached = rewardsNetworkCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
     console.log("[cache] HIT rewards network");
-    return rewardsNetworkCache.data;
+    return cached.data;
   }
 
   console.log("[cache] MISS rewards network — fetching");
 
+  // Strip special chars for API query (apostrophes, accents cause misses)
+  const apiQuery = query.replace(/[''`]/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
   const params = new URLSearchParams({
     campaignCode: "aa-dining",
     location: "10001",
-    restaurantOrCuisine: query,
+    restaurantOrCuisine: apiQuery,
     pageSize: "50",
     pageNo: "1",
     sortBy: "recommended",
@@ -290,11 +294,11 @@ async function getRewardsNetworkMerchants(
   const data = await resp.json();
   const merchants: RewardsNetworkMerchant[] = data.merchants ?? [];
 
-  rewardsNetworkCache = {
+  rewardsNetworkCache.set(cacheKey, {
     data: merchants,
     expiresAt: Date.now() + REWARDS_NETWORK_CACHE_TTL,
-  };
-  console.log(`[rewards-network] Cached ${merchants.length} merchants for "${query}"`);
+  });
+  console.log(`[rewards-network] Cached ${merchants.length} merchants for "${apiQuery}"`);
   return merchants;
 }
 
@@ -360,10 +364,43 @@ type BiltRestaurant = {
   primary_cuisine?: { name: string };
   multiplier?: Record<string, number>;
   exclusive?: boolean;
+  state?: string;
+  city?: string;
+  zip_code?: string;
 };
 let biltRestaurantsCache: CacheEntry<BiltRestaurant[]> | null = null;
 const BILT_CACHE_TTL = 3_600_000; // 1 hour
 const BILT_API_URL = "https://api.biltrewards.com/public/merchants";
+
+const NYC_CITIES = new Set([
+  "new york", "brooklyn", "queens", "bronx", "staten island",
+  "long island city", "astoria", "flushing", "jamaica",
+  "ridgewood", "woodside", "sunnyside", "jackson heights",
+]);
+
+const NYC_ZIP_PREFIXES = ["100", "101", "102", "103", "104", "110", "111", "112", "113", "114", "116"];
+
+function isBiltNYC(r: BiltRestaurant): boolean {
+  // Check state field first
+  if (r.state && r.state.toUpperCase() === "NY") {
+    // Further filter to NYC-area by city or zip
+    const city = (r.city ?? "").toLowerCase().trim();
+    if (city && NYC_CITIES.has(city)) return true;
+    const zip = (r.zip_code ?? "").trim();
+    if (zip && NYC_ZIP_PREFIXES.some((p) => zip.startsWith(p))) return true;
+    // If state is NY but no city/zip data, include it (better false positive than false negative)
+    if (!city && !zip) return true;
+  }
+  // Fallback: check address string for NYC indicators
+  const addr = (r.address ?? "").toLowerCase();
+  if (addr.includes(", ny ") || addr.includes(", new york")) {
+    if (NYC_CITIES.has((r.city ?? "").toLowerCase().trim())) return true;
+    if (NYC_ZIP_PREFIXES.some((p) => addr.includes(p))) return true;
+    // Generic NY address — include
+    return true;
+  }
+  return false;
+}
 
 async function getBiltRestaurants(query: string): Promise<BiltRestaurant[]> {
   const cacheKey = `bilt::${norm(query)}`;
@@ -392,11 +429,11 @@ async function getBiltRestaurants(query: string): Promise<BiltRestaurant[]> {
   }
 
   biltRestaurantsCache = {
-    data: allRestaurants,
+    data: allRestaurants.filter(isBiltNYC),
     expiresAt: Date.now() + BILT_CACHE_TTL,
   };
-  console.log(`[bilt] Cached ${allRestaurants.length} restaurants`);
-  return allRestaurants;
+  console.log(`[bilt] Cached ${biltRestaurantsCache.data.length}/${allRestaurants.length} NYC restaurants`);
+  return biltRestaurantsCache.data;
 }
 
 export async function checkBilt(name: string): Promise<CheckResult> {
@@ -582,19 +619,30 @@ export async function batchSearch(
 }
 
 export function titleMatchesRestaurant(title: string, name: string): boolean {
-  const t = norm(title);
   const n = norm(name);
+  if (n.length === 0) return false;
+
+  const t = norm(title);
   if (t.startsWith(n)) return true;
+
+  // Split on separators BEFORE normalizing so they're still present
+  const titleLower = title.toLowerCase();
   for (const sep of ["|", "-", "–", "—", ":"]) {
-    const parts = t.split(sep);
+    if (!titleLower.includes(sep)) continue;
+    const parts = titleLower.split(sep);
     for (const part of parts) {
-      const stripped = part.trim();
+      const stripped = norm(part);
       if (stripped.startsWith(n) || stripped === n) return true;
     }
   }
+
+  // Name is a significant portion of the title
   if (t.includes(n) && n.length / Math.max(t.length, 1) > 0.3) return true;
+
+  // Multi-word names: all significant words present
   const words = n.split(/\s+/).filter((w) => w.length > 2);
   if (words.length > 1 && words.every((w) => t.includes(w))) return true;
+
   return false;
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { norm, slugVariants, matchesRestaurant } from "../matching";
+import { norm, slugVariants, matchesRestaurant, stripThePrefix } from "../matching";
 import { evaluateSearchResults } from "../checkers";
 import type { Platform, CheckResult } from "../platforms";
 
@@ -127,29 +127,27 @@ describe("matchesRestaurant()", () => {
   });
 
   it("filters words ≤ 2 chars from word-match strategy", () => {
-    // "An Ox" → norm → "an ox" → words ["an","ox"] → filter >2 → [] → length 0 → false
-    // But "an ox" as substring match should still work if the text contains "an ox"
+    // "An Ox" → norm → "an ox" → words ["an","ox"] → filter >2 → [] → no word match
+    // "an ox" is 5 chars, > 3, so substring match works
     expect(matchesRestaurant("an ox is here", "An Ox")).toBe(true); // substring match
     expect(matchesRestaurant("the ox is big", "An Ox")).toBe(false); // no substring, no long words
   });
 
-  it("short name (≤2 chars) only matches as exact substring", () => {
-    // "Bo" → norm → "bo" → words ["bo"] → filter >2 → [] → length 0 → false for word match
-    // But substring "bo" is in "robot" so it matches
-    expect(matchesRestaurant("robot", "Bo")).toBe(true); // substring "bo" found in "robot"
+  it("short name (≤3 chars) requires word boundary match", () => {
+    // "Bo" → norm → "bo" → ≤3 chars → word-boundary match required
+    expect(matchesRestaurant("robot", "Bo")).toBe(false); // "bo" inside "robot" — no boundary
+    expect(matchesRestaurant("Bo is great", "Bo")).toBe(true); // word boundary
     expect(matchesRestaurant("xyz", "Bo")).toBe(false);
+    expect(matchesRestaurant("try odo tonight", "Odo")).toBe(true); // word boundary
+    expect(matchesRestaurant("odometer reading", "Odo")).toBe(false); // no boundary
   });
 
-  // BUG: known false-positive for pure-Unicode names
-  // norm("寿司") → "" which is found as substring in ANY text via "".includes("")
-  it("false-positive: pure-Unicode name matches everything", () => {
-    // BUG: known false-positive for pure-Unicode names
-    expect(matchesRestaurant("Totally unrelated text", "寿司")).toBe(true);
+  it("pure-Unicode name does not match anything", () => {
+    expect(matchesRestaurant("Totally unrelated text", "寿司")).toBe(false);
   });
 
   it("handles empty restaurant name", () => {
-    // norm("") → "" → t.includes("") is always true
-    expect(matchesRestaurant("any text", "")).toBe(true);
+    expect(matchesRestaurant("any text", "")).toBe(false);
   });
 
   it("handles empty text", () => {
@@ -157,8 +155,7 @@ describe("matchesRestaurant()", () => {
   });
 
   it("handles both empty", () => {
-    // "".includes("") → true
-    expect(matchesRestaurant("", "")).toBe(true);
+    expect(matchesRestaurant("", "")).toBe(false);
   });
 
   it("multi-word name matches when all significant words present", () => {
@@ -169,6 +166,31 @@ describe("matchesRestaurant()", () => {
 
   it("multi-word name fails when one significant word missing", () => {
     expect(matchesRestaurant("5 napkin place", "5 Napkin Burger")).toBe(false);
+  });
+
+  it("handles 'The' prefix: 'The Smith' matches text with just 'Smith'", () => {
+    expect(matchesRestaurant("Visit Smith restaurant", "The Smith")).toBe(true);
+    expect(matchesRestaurant("The Smith is great", "The Smith")).toBe(true);
+  });
+
+  it("handles special chars: L'Artusi and Côte", () => {
+    expect(matchesRestaurant("dine at lartusi tonight", "L'Artusi")).toBe(true);
+    expect(matchesRestaurant("visit cote restaurant", "Côte")).toBe(true);
+  });
+
+  it("Don Angie matches correctly", () => {
+    expect(matchesRestaurant("Book Don Angie for dinner", "Don Angie")).toBe(true);
+    expect(matchesRestaurant("Random text here", "Don Angie")).toBe(false);
+  });
+
+  it("Thai Diner matches correctly", () => {
+    expect(matchesRestaurant("Try Thai Diner in Nolita", "Thai Diner")).toBe(true);
+    expect(matchesRestaurant("Thai food at a diner", "Thai Diner")).toBe(true);
+  });
+
+  it("Tatiana matches with word boundary", () => {
+    expect(matchesRestaurant("Tatiana is a great spot", "Tatiana")).toBe(true);
+    expect(matchesRestaurant("unrelated text", "Tatiana")).toBe(false);
   });
 });
 
