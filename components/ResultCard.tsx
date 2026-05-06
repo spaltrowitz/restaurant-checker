@@ -90,10 +90,10 @@ export function ResultCard({
 }: ResultCardProps) {
   const platform = getPlatform(platformName);
 
-  // Loading state — shimmer skeleton
+  // Loading state — improved skeleton
   if (!result) {
     return (
-      <div className="flex items-start gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-5 animate-fade-in">
+      <div className="flex items-start gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-5 animate-slide-in">
         <div
           className="mt-0.5 h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-gold)]"
           role="status"
@@ -102,7 +102,10 @@ export function ResultCard({
         </div>
         <div className="flex-1">
           <p className="font-medium text-[var(--color-text-secondary)]">{platformName}</p>
-          <div className="mt-2 h-3 w-32 rounded animate-shimmer" aria-hidden="true"></div>
+          <div className="mt-2 space-y-2">
+            <div className="h-3 w-40 rounded skeleton-card" aria-hidden="true"></div>
+            <div className="h-3 w-24 rounded skeleton-card" aria-hidden="true" style={{ animationDelay: '0.2s' }}></div>
+          </div>
         </div>
       </div>
     );
@@ -125,14 +128,17 @@ export function ResultCard({
   // FOUND state
   if (result.found || communityConfirmed) {
     const borderClass = isApiResult
-      ? "border-2 border-[var(--color-success)]/40 hover:border-[var(--color-success)]/60"
+      ? "border-2 border-emerald-500/40 hover:border-emerald-500/60"
       : "border-2 border-blue-400/30 hover:border-blue-400/50";
     const bgClass = isApiResult
-      ? "bg-[var(--color-success-dim)]"
-      : "bg-blue-950/20";
+      ? "bg-gradient-to-br from-[var(--color-api-green-dim)] to-[var(--color-surface-raised)]"
+      : "bg-gradient-to-br from-[var(--color-web-blue-dim)] to-[var(--color-surface-raised)]";
+    const shadowClass = isApiResult
+      ? "hover:shadow-lg hover:shadow-emerald-500/10"
+      : "hover:shadow-lg hover:shadow-blue-500/10";
 
     return (
-      <div className={`flex items-start gap-4 rounded-xl ${borderClass} ${bgClass} p-5 animate-fade-in transition-all duration-200 hover:shadow-lg`}>
+      <div className={`flex items-start gap-4 rounded-xl ${borderClass} ${bgClass} p-5 animate-fade-in-up transition-all duration-300 ${shadowClass}`}>
         <span className="mt-0.5 text-xl" aria-label="Found" role="img">✅</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -203,7 +209,7 @@ export function ResultCard({
   // SEARCH UNAVAILABLE state — amber/warning
   if (result.searchUnavailable) {
     return (
-      <div className="flex items-start gap-4 rounded-xl border-2 border-[var(--color-warning)]/30 bg-[var(--color-warning-dim)] p-5 animate-fade-in transition-all duration-200 hover:border-[var(--color-warning)]/50 hover:shadow-lg">
+      <div className="flex items-start gap-4 rounded-xl border-2 border-[var(--color-warning)]/30 bg-gradient-to-br from-[var(--color-warning-dim)] to-[var(--color-surface-raised)] p-5 animate-fade-in-up transition-all duration-300 hover:border-[var(--color-warning)]/50 hover:shadow-lg hover:shadow-amber-500/10">
         <span className="mt-0.5 text-xl" aria-label="Manual check needed" role="img">🔗</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -240,7 +246,7 @@ export function ResultCard({
 
   // NOT FOUND state — subtle, collapsed feel
   return (
-    <div className="flex items-start gap-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-70 animate-fade-in transition-all duration-200 hover:opacity-100 hover:border-[var(--color-border)]">
+    <div className="flex items-start gap-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-60 animate-fade-in transition-all duration-300 hover:opacity-90 hover:border-[var(--color-border)]">
       <span className="mt-0.5 text-lg text-[var(--color-text-muted)]" aria-label="Not found" role="img">—</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">

@@ -26,14 +26,14 @@ function SearchBarInner() {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search a restaurant name…"
+        placeholder="Search any NYC restaurant…"
         aria-label="Search for a restaurant"
-        className="flex-1 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-raised)] px-6 py-4 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold-glow)] transition-all duration-200 shadow-sm"
+        className="flex-1 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-raised)] px-5 sm:px-6 py-4 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold-glow)] transition-all duration-300 shadow-sm hover:border-[var(--color-gold-dim)]/40"
         autoFocus
       />
       <button
         type="submit"
-        className="rounded-xl bg-[var(--color-gold)] px-8 py-4 text-base font-semibold text-[var(--color-surface)] transition-all duration-200 hover:bg-[var(--color-gold-dim)] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] shadow-md"
+        className="rounded-xl bg-gradient-to-b from-[var(--color-gold-bright)] to-[var(--color-gold)] px-6 sm:px-8 py-4 text-base font-bold text-[var(--color-surface)] transition-all duration-200 hover:from-[var(--color-gold)] hover:to-[var(--color-gold-dim)] hover:shadow-lg hover:shadow-[var(--color-gold-glow)] hover:scale-[1.02] active:scale-[0.98] shadow-md"
       >
         Search
       </button>

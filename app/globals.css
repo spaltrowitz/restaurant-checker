@@ -9,6 +9,7 @@
   --color-gold: #D4A853;
   --color-gold-dim: #B8923D;
   --color-gold-glow: #D4A85330;
+  --color-gold-bright: #E8C373;
   --color-text-primary: #f5f5f5;
   --color-text-secondary: #a1a1aa;
   --color-text-muted: #71717a;
@@ -18,6 +19,10 @@
   --color-warning-dim: #451a03;
   --color-error: #f87171;
   --color-error-dim: #450a0a;
+  --color-api-green: #22c55e;
+  --color-api-green-dim: #052e16;
+  --color-web-blue: #60a5fa;
+  --color-web-blue-dim: #0c1a2e;
 }
 
 body {
@@ -28,8 +33,18 @@ body {
 
 /* Smooth animations */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes pulse-gold {
@@ -42,8 +57,26 @@ body {
   100% { background-position: 200% 0; }
 }
 
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
 .animate-fade-in {
-  animation: fade-in 0.3s ease-out forwards;
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out forwards;
 }
 
 .animate-pulse-gold {
@@ -54,4 +87,35 @@ body {
   background: linear-gradient(90deg, var(--color-surface-raised) 25%, var(--color-surface-overlay) 50%, var(--color-surface-raised) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s ease-out forwards;
+}
+
+/* Staggered card entry */
+.stagger-1 { animation-delay: 0.05s; opacity: 0; }
+.stagger-2 { animation-delay: 0.1s; opacity: 0; }
+.stagger-3 { animation-delay: 0.15s; opacity: 0; }
+.stagger-4 { animation-delay: 0.2s; opacity: 0; }
+.stagger-5 { animation-delay: 0.25s; opacity: 0; }
+.stagger-6 { animation-delay: 0.3s; opacity: 0; }
+.stagger-7 { animation-delay: 0.35s; opacity: 0; }
+.stagger-8 { animation-delay: 0.4s; opacity: 0; }
+
+/* Hero background texture */
+.hero-gradient {
+  background: radial-gradient(ellipse at 50% 0%, var(--color-gold-glow) 0%, transparent 60%);
+}
+
+/* Skeleton loader improved */
+.skeleton-card {
+  background: linear-gradient(90deg, var(--color-surface-raised) 0%, var(--color-surface-overlay) 40%, var(--color-surface-raised) 80%);
+  background-size: 300% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Footer styling */
+.footer-gradient {
+  background: linear-gradient(to bottom, var(--color-border-subtle), var(--color-surface));
 }

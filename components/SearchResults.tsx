@@ -260,7 +260,7 @@ function SearchResultsInner() {
   // Celebration summary card (post-stream)
   const celebrationSummary = isDone && resultsArr.length > 0 && (
     <div
-      className={`mb-6 rounded-xl p-6 animate-fade-in ${
+      className={`mb-6 rounded-xl p-6 animate-scale-in ${
         foundCount > 0
           ? "bg-gradient-to-br from-[var(--color-success-dim)] via-[var(--color-surface-raised)] to-[var(--color-surface-raised)] border border-[var(--color-success)]/30"
           : "bg-[var(--color-surface-raised)] border border-[var(--color-border)]"
@@ -339,33 +339,42 @@ function SearchResultsInner() {
       )}
 
       {!error && isSearching && (
-        <p className="mb-6 text-sm text-[var(--color-text-secondary)]">
-          {summaryText()}
-        </p>
+        <div className="mb-6 flex items-center gap-3 animate-fade-in">
+          <div className="h-1.5 flex-1 rounded-full bg-[var(--color-surface-overlay)] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[var(--color-gold)] to-[var(--color-gold-dim)] transition-all duration-500 ease-out"
+              style={{ width: `${Math.max(10, (checkedCount / PLATFORMS.length) * 100)}%` }}
+            />
+          </div>
+          <p className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
+            {checkedCount}/{PLATFORMS.length}
+          </p>
+        </div>
       )}
 
       {!error && celebrationSummary}
 
       {!error && (
         <div className="grid gap-3">
-          {visiblePlatforms.map((p) => (
-            <ResultCard
-              key={p.name}
-              platformName={p.name}
-              result={results.get(p.name) ?? null}
-              restaurantName={query}
-              communityReport={communityReports.get(p.name)}
-              onReported={() => fetchCommunityReports(query)}
-            />
+          {visiblePlatforms.map((p, i) => (
+            <div key={p.name} className={`animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}>
+              <ResultCard
+                platformName={p.name}
+                result={results.get(p.name) ?? null}
+                restaurantName={query}
+                communityReport={communityReports.get(p.name)}
+                onReported={() => fetchCommunityReports(query)}
+              />
+            </div>
           ))}
         </div>
       )}
 
       {notFoundPlatforms.length > 0 && (
-        <div className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-60 animate-fade-in">
+        <div className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-50 animate-fade-in transition-all duration-300 hover:opacity-70">
           <p className="text-sm text-[var(--color-text-muted)]">
-            <span className="font-medium">Not available on:</span>{" "}
-            {notFoundPlatforms.map((p) => p.name).join(", ")}
+            <span className="font-medium text-[var(--color-text-secondary)]">Not available on:</span>{" "}
+            {notFoundPlatforms.map((p) => p.name).join(" · ")}
           </p>
         </div>
       )}
