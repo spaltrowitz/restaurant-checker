@@ -45,6 +45,9 @@ sightings.db
 # app database
 eatdiscounted.db
 
+# pre-fetch cache (generated data)
+data/search-cache.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

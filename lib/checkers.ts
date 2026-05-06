@@ -1,11 +1,64 @@
 import { Platform, CheckResult, PLATFORMS } from "./platforms";
 import { matchesRestaurant, slugVariants, norm } from "./matching";
+import * as fs from "fs";
+import * as path from "path";
 
 // --- In-memory cache ---
 type CacheEntry<T> = { data: T; expiresAt: number };
 
 const searchCache = new Map<string, CacheEntry<SearchResult[]>>();
 const SEARCH_CACHE_TTL = 3_600_000; // 1 hour
+
+// --- Pre-fetch disk cache ---
+const PREFETCH_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const PREFETCH_CACHE_PATH = path.resolve(process.cwd(), "data/search-cache.json");
+
+type PrefetchCacheEntry = {
+  restaurant: string;
+  fetchedAt: string;
+  platforms: Record<string, Array<{ title: string; href: string; snippet: string }>>;
+};
+type PrefetchCache = Record<string, PrefetchCacheEntry>;
+
+let prefetchCache: PrefetchCache | null = null;
+let prefetchCacheLoadedAt = 0;
+const PREFETCH_RELOAD_INTERVAL = 300_000; // re-read file every 5 min
+
+function loadPrefetchCache(): PrefetchCache | null {
+  if (prefetchCache && Date.now() - prefetchCacheLoadedAt < PREFETCH_RELOAD_INTERVAL) {
+    return prefetchCache;
+  }
+  try {
+    if (!fs.existsSync(PREFETCH_CACHE_PATH)) return null;
+    const raw = fs.readFileSync(PREFETCH_CACHE_PATH, "utf-8");
+    prefetchCache = JSON.parse(raw) as PrefetchCache;
+    prefetchCacheLoadedAt = Date.now();
+    return prefetchCache;
+  } catch {
+    return null;
+  }
+}
+
+function getPrefetchResults(
+  restaurant: string,
+  platformName: string
+): SearchResult[] | null {
+  const cache = loadPrefetchCache();
+  if (!cache) return null;
+
+  const key = restaurant.toLowerCase().trim();
+  const entry = cache[key];
+  if (!entry) return null;
+
+  const age = Date.now() - new Date(entry.fetchedAt).getTime();
+  if (age > PREFETCH_CACHE_TTL) return null;
+
+  const results = entry.platforms[platformName];
+  if (!results) return null;
+
+  console.log(`[prefetch-cache] HIT ${restaurant} → ${platformName}`);
+  return results;
+}
 
 let blackbirdSitemapCache: CacheEntry<string[]> | null = null;
 const SITEMAP_CACHE_TTL = 300_000; // 5 minutes
@@ -582,12 +635,19 @@ export async function batchSearch(
     resultMap.set(p.name, { results: [], blocked: true });
   }
 
-  // Run all searches in parallel, using cache when available
+  // Run all searches in parallel, using prefetch cache → in-memory cache → live Brave
   const searchPromises = nonBlackbird.map(async (platform) => {
     const cacheKey = normalizeKey(name, platform.name);
     const cached = getSearchCache(cacheKey);
     if (cached !== null) {
       return { platform: platform.name, results: cached, blocked: false };
+    }
+
+    // Check pre-fetched disk cache (popular restaurants)
+    const prefetched = getPrefetchResults(name, platform.name);
+    if (prefetched !== null) {
+      setSearchCache(cacheKey, prefetched);
+      return { platform: platform.name, results: prefetched, blocked: false };
     }
 
     console.log(`[cache] MISS search: ${cacheKey}`);
