@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { batchSearch, evaluateSearchResults, titleMatchesRestaurant, isNoResultsPage } from "../checkers";
+import { batchSearch, evaluateSearchResults, titleMatchesRestaurant, isNoResultsPage, extractDealDetails } from "../checkers";
 import type { Platform } from "../platforms";
 
 // ─── Helper to build a minimal Platform for testing ───
@@ -229,6 +229,12 @@ describe("batchSearch()", () => {
       "Nea",
       "Rakuten Dining",
       "Too Good To Go",
+      "Pulsd",
+      "Restaurant.com",
+      "Groupon",
+      "LivingSocial",
+      "The Infatuation",
+      "Eater",
     ];
 
     for (const name of platformNames) {
@@ -314,14 +320,46 @@ describe("batchSearch()", () => {
     // Clear cache to ensure fresh search
     await batchSearch(restaurantName);
 
-    // Check that fetch was called with site: operator for platforms with domainFilter
+    // Check that fetch was called with site: operator for platforms with domainFilter (not inKind which uses skipSiteOperator)
+    const fetchCalls = vi.mocked(fetch).mock.calls;
+    const rakutenCall = fetchCalls.find((call) => {
+      const url = call[0] as string;
+      return url.includes(restaurantName) && url.includes("site%3Arakuten.com");
+    });
+
+    expect(rakutenCall).toBeDefined();
+  });
+
+  it("skips site: operator for platforms with skipSiteOperator", async () => {
+    const restaurantName = uniqueRestaurantName();
+    const mockResponse = {
+      web: {
+        results: [
+          {
+            title: "Test",
+            url: "https://inkind.com/test",
+            description: "Test",
+          },
+        ],
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response);
+
+    await batchSearch(restaurantName);
+
     const fetchCalls = vi.mocked(fetch).mock.calls;
     const inKindCall = fetchCalls.find((call) => {
       const url = call[0] as string;
-      return url.includes(restaurantName) && url.includes("site%3Ainkind.com");
+      return url.includes(restaurantName) && url.includes("inkind");
     });
 
     expect(inKindCall).toBeDefined();
+    const inKindUrl = inKindCall![0] as string;
+    expect(inKindUrl).not.toContain("site%3Ainkind.com");
   });
 
   it("does NOT use site: operator when platform has no domainFilter", async () => {
@@ -440,7 +478,28 @@ describe("evaluateSearchResults() with Brave Search results", () => {
     expect(result.found).toBe(true);
     expect(result.method).toBe("web_search");
     expect(result.url).toBe("https://inkind.com/restaurants/carbone");
-    expect(result.details).toBe("Carbone - inKind");
+  });
+
+  it("extracts deal details from snippet into result details", () => {
+    const platform = makePlatform({
+      name: "inKind",
+      domainFilter: "inkind.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone - inKind",
+          href: "https://inkind.com/restaurants/carbone",
+          snippet: "Get 20% cashback when you dine at Carbone",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+    expect(result.details).toContain("20%");
+    expect(result.details).toContain("Carbone - inKind");
   });
 
   it("filters blog/help/FAQ URLs from Brave results", () => {
@@ -807,5 +866,555 @@ describe("isNonNYCResult", () => {
       "Carbone in Manhattan beats any Chicago spot",
       "https://pulsd.com/carbone"
     )).toBe(false);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  extractDealDetails() — Earning/deal detail extraction
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+describe("extractDealDetails()", () => {
+  it("extracts cashback percentage from text", () => {
+    const result = extractDealDetails("Restaurant Deals", "10% cashback on dining");
+    expect(result).not.toBeNull();
+    expect(result).toContain("10% cashback");
+  });
+
+  it("extracts points multiplier from text", () => {
+    const result = extractDealDetails("Earn 3x points per dollar", "Great rewards");
+    expect(result).not.toBeNull();
+    expect(result).toContain("3x points");
+  });
+
+  it("extracts dollar-off deals", () => {
+    const result = extractDealDetails("Special Offer", "$25 off your first order");
+    expect(result).not.toBeNull();
+    expect(result).toContain("$25 off");
+  });
+
+  it("extracts percentage-off deals", () => {
+    const result = extractDealDetails("Save up to 50% off", "Limited time");
+    expect(result).not.toBeNull();
+    expect(result).toContain("50% off");
+  });
+
+  it("extracts miles per dollar", () => {
+    const result = extractDealDetails("Airline rewards", "Earn 5 miles per dollar spent");
+    expect(result).not.toBeNull();
+    expect(result).toContain("5 miles per dollar");
+  });
+
+  it("returns null when no deal info in text", () => {
+    const result = extractDealDetails("Carbone Italian Restaurant", "Fine dining in Greenwich Village");
+    expect(result).toBeNull();
+  });
+
+  it("extracts the first/best deal when multiple are mentioned", () => {
+    const result = extractDealDetails(
+      "Get 10% cashback or $25 off",
+      "Multiple deals available for dining"
+    );
+    expect(result).not.toBeNull();
+    // Should extract at least one deal detail
+    expect(result!.length).toBeGreaterThan(0);
+  });
+
+  it("handles 'up to' phrasing", () => {
+    const result = extractDealDetails("Rewards", "up to 15% cash back on dining");
+    expect(result).not.toBeNull();
+    expect(result).toContain("15% cash back");
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  evaluateSearchResults() — New platform evaluation
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+describe("evaluateSearchResults() new platforms", () => {
+  // --- Groupon ---
+  it("Groupon: finds restaurant deal result on groupon.com", () => {
+    const platform = makePlatform({
+      name: "Groupon",
+      domainFilter: "groupon.com",
+      rewardType: "discount",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone NYC - Restaurant Deal",
+          href: "https://www.groupon.com/deals/carbone-nyc",
+          snippet: "Get 30% off dining at Carbone in Manhattan",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+    expect(result.platform).toBe("Groupon");
+    expect(result.url).toContain("groupon.com");
+  });
+
+  it("Groupon: filters out non-restaurant result on groupon.com", () => {
+    const platform = makePlatform({
+      name: "Groupon",
+      domainFilter: "groupon.com",
+    });
+
+    // Non-restaurant result (spa) — title doesn't match "Carbone"
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Best Spa Deals NYC - Groupon",
+          href: "https://www.groupon.com/deals/spa-nyc",
+          snippet: "Relax at Carbon Spa in NYC",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  it("Groupon: rejects result from wrong domain", () => {
+    const platform = makePlatform({
+      name: "Groupon",
+      domainFilter: "groupon.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone Restaurant Review",
+          href: "https://yelp.com/biz/carbone-nyc",
+          snippet: "Carbone is a fantastic Italian restaurant",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  // --- LivingSocial ---
+  it("LivingSocial: finds restaurant deal", () => {
+    const platform = makePlatform({
+      name: "LivingSocial",
+      domainFilter: "livingsocial.com",
+      rewardType: "discount",
+    });
+
+    const result = evaluateSearchResults(platform, "L'Artusi", {
+      results: [
+        {
+          title: "L'Artusi - Italian Dining Deal | LivingSocial",
+          href: "https://www.livingsocial.com/deals/lartusi-nyc",
+          snippet: "Save 40% on dinner at L'Artusi in West Village, Manhattan",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+    expect(result.platform).toBe("LivingSocial");
+  });
+
+  it("LivingSocial: rejects result from wrong domain", () => {
+    const platform = makePlatform({
+      name: "LivingSocial",
+      domainFilter: "livingsocial.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone NYC Reservations",
+          href: "https://resy.com/cities/ny/carbone",
+          snippet: "Book Carbone on Resy",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  // --- The Infatuation ---
+  it("The Infatuation: finds deal roundup mentioning restaurant", () => {
+    const platform = makePlatform({
+      name: "The Infatuation",
+      domainFilter: "theinfatuation.com",
+      rewardType: "deals",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone Restaurant Week Deal | The Infatuation",
+          href: "https://www.theinfatuation.com/new-york/deals/carbone-restaurant-week",
+          snippet: "Carbone is offering a special prix fixe during NYC Restaurant Week",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+    expect(result.platform).toBe("The Infatuation");
+    expect(result.url).toContain("theinfatuation.com");
+  });
+
+  it("The Infatuation: rejects result from wrong domain", () => {
+    const platform = makePlatform({
+      name: "The Infatuation",
+      domainFilter: "theinfatuation.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone Review - Eater",
+          href: "https://www.eater.com/reviews/carbone",
+          snippet: "Our review of Carbone",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  // --- Eater ---
+  it("Eater: finds editorial deal coverage", () => {
+    const platform = makePlatform({
+      name: "Eater",
+      domainFilter: "eater.com",
+      rewardType: "deals",
+    });
+
+    const result = evaluateSearchResults(platform, "Shake Shack", {
+      results: [
+        {
+          title: "Shake Shack Deal Alert — 50% Off Burgers | Eater NY",
+          href: "https://www.eater.com/new-york/shake-shack-deal",
+          snippet: "Shake Shack is running a half-price burger promotion in NYC this week",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+    expect(result.platform).toBe("Eater");
+    expect(result.url).toContain("eater.com");
+  });
+
+  it("Eater: rejects result from wrong domain", () => {
+    const platform = makePlatform({
+      name: "Eater",
+      domainFilter: "eater.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Shake Shack", {
+      results: [
+        {
+          title: "Shake Shack Menu Prices",
+          href: "https://www.grubhub.com/restaurant/shake-shack",
+          snippet: "Order Shake Shack on Grubhub",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Query tuning — domain/path filtering behavior
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+describe("Query tuning", () => {
+  it("inKind: domainFilter works with skipSiteOperator for broader search", () => {
+    const platform = makePlatform({
+      name: "inKind",
+      domainFilter: "inkind.com",
+      searchQuery: "inkind dining",
+      skipSiteOperator: true,
+    });
+
+    // Result from inkind.com should pass domain filter
+    const goodResult = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone - inKind",
+          href: "https://inkind.com/restaurants/carbone",
+          snippet: "Dine at Carbone with inKind house account credit",
+        },
+      ],
+      blocked: false,
+    });
+    expect(goodResult.found).toBe(true);
+
+    // Result from non-inKind domain should be filtered by domainFilter
+    const badResult = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone Review",
+          href: "https://yelp.com/biz/carbone-new-york",
+          snippet: "Carbone is an inKind dining partner",
+        },
+      ],
+      blocked: false,
+    });
+    expect(badResult.found).toBe(false);
+  });
+
+  it("Rakuten Dining: rejects non-dining Rakuten pages", () => {
+    const platform = makePlatform({
+      name: "Rakuten Dining",
+      domainFilter: "rakuten.com/dining",
+    });
+
+    // Non-dining Rakuten page — domain filter requires /dining in path
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone Activated Charcoal - Rakuten",
+          href: "https://www.rakuten.com/shop/carbone-charcoal",
+          snippet: "Buy Carbone activated charcoal supplements",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  it("Rakuten Dining: allows dining-specific results", () => {
+    const platform = makePlatform({
+      name: "Rakuten Dining",
+      domainFilter: "rakuten.com/dining",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone — Earn 5% Cash Back | Rakuten Dining",
+          href: "https://www.rakuten.com/dining/restaurant/carbone-nyc",
+          snippet: "Earn cashback dining at Carbone in NYC",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+    expect(result.url).toContain("rakuten.com/dining");
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  NYC location filter — new platforms integration
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+describe("NYC location filter with new platforms", () => {
+  it("Groupon: rejects non-NYC location result", () => {
+    const platform = makePlatform({
+      name: "Groupon",
+      domainFilter: "groupon.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Joe's Pizza", {
+      results: [
+        {
+          title: "Joe's Pizza - Chicago Deal",
+          href: "https://www.groupon.com/deals/joes-pizza-chicago",
+          snippet: "Great pizza deal at Joe's Pizza in Chicago, Illinois",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  it("Groupon: allows result with NYC indicator", () => {
+    const platform = makePlatform({
+      name: "Groupon",
+      domainFilter: "groupon.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Joe's Pizza", {
+      results: [
+        {
+          title: "Joe's Pizza - NYC Deal",
+          href: "https://www.groupon.com/deals/joes-pizza-nyc",
+          snippet: "Classic New York slice deal at Joe's Pizza in Manhattan",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+  });
+
+  it("LivingSocial: rejects non-NYC location result", () => {
+    const platform = makePlatform({
+      name: "LivingSocial",
+      domainFilter: "livingsocial.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Nobu", {
+      results: [
+        {
+          title: "Nobu Restaurant Deal | LivingSocial",
+          href: "https://www.livingsocial.com/deals/nobu-miami",
+          snippet: "Dine at Nobu in Miami Beach, Florida",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  it("LivingSocial: allows result with NYC indicator", () => {
+    const platform = makePlatform({
+      name: "LivingSocial",
+      domainFilter: "livingsocial.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Nobu", {
+      results: [
+        {
+          title: "Nobu Restaurant Deal | LivingSocial",
+          href: "https://www.livingsocial.com/deals/nobu-nyc",
+          snippet: "Dine at Nobu in Tribeca, NYC",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+  });
+
+  it("The Infatuation: rejects non-NYC location result", () => {
+    const platform = makePlatform({
+      name: "The Infatuation",
+      domainFilter: "theinfatuation.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone Las Vegas Deal | The Infatuation",
+          href: "https://www.theinfatuation.com/las-vegas/deals/carbone",
+          snippet: "Carbone brings its Italian magic to Las Vegas with a special tasting menu",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  it("Eater: rejects non-NYC location result", () => {
+    const platform = makePlatform({
+      name: "Eater",
+      domainFilter: "eater.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Shake Shack", {
+      results: [
+        {
+          title: "Shake Shack Austin Opening Deal | Eater",
+          href: "https://www.eater.com/austin/shake-shack-deal",
+          snippet: "Shake Shack opens in Austin, Texas with first-week specials",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(false);
+  });
+
+  it("Eater: allows result with Brooklyn indicator", () => {
+    const platform = makePlatform({
+      name: "Eater",
+      domainFilter: "eater.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Shake Shack", {
+      results: [
+        {
+          title: "Shake Shack Williamsburg Deal | Eater NY",
+          href: "https://www.eater.com/new-york/shake-shack-williamsburg",
+          snippet: "Shake Shack in Williamsburg, Brooklyn launches a weekend brunch deal",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+  });
+
+  it("new platform result with no location mentioned is allowed", () => {
+    const platform = makePlatform({
+      name: "Groupon",
+      domainFilter: "groupon.com",
+    });
+
+    const result = evaluateSearchResults(platform, "Carbone", {
+      results: [
+        {
+          title: "Carbone Restaurant Deal",
+          href: "https://www.groupon.com/deals/carbone",
+          snippet: "Save on your next dinner at Carbone with this exclusive deal",
+        },
+      ],
+      blocked: false,
+    });
+
+    expect(result.found).toBe(true);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  extractDealDetails() — Earning/deal info extraction
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+describe("extractDealDetails()", () => {
+  it("extracts percentage cashback", () => {
+    const result = extractDealDetails("Carbone on Upside", "Get 5% cashback at Carbone");
+    expect(result).toContain("5% cashback");
+  });
+
+  it("extracts dollar-off deals", () => {
+    const result = extractDealDetails("Carbone Deal", "$10 off your first order");
+    expect(result).toContain("$10 off");
+  });
+
+  it("extracts percentage-off deals", () => {
+    const result = extractDealDetails("Carbone Special", "Save 25% off dinner at Carbone");
+    expect(result).toContain("25% off");
+  });
+
+  it("extracts points multipliers", () => {
+    const result = extractDealDetails("Carbone - Bilt Dining", "Earn 3x points per dollar");
+    expect(result).toContain("3x points");
+  });
+
+  it("extracts miles per dollar", () => {
+    const result = extractDealDetails("Carbone Dining", "Earn 5 miles per dollar spent");
+    expect(result).toContain("5 miles per dollar");
+  });
+
+  it("extracts save $ amounts", () => {
+    const result = extractDealDetails("Carbone", "Save $25 on your next visit");
+    expect(result).toContain("Save $25");
+  });
+
+  it("returns null when no deal info found", () => {
+    const result = extractDealDetails("Carbone Restaurant", "Italian fine dining in Greenwich Village");
+    expect(result).toBeNull();
+  });
+
+  it("extracts multiple deal details", () => {
+    const result = extractDealDetails("Carbone Deal", "Get 5% cashback plus $10 off first order");
+    expect(result).toContain("5% cashback");
+    expect(result).toContain("$10 off");
   });
 });

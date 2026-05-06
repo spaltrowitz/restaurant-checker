@@ -2,7 +2,7 @@ export interface Platform {
   name: string;
   url: string;
   appOnly: boolean;
-  rewardType: "cashback" | "points" | "credit" | "discount";
+  rewardType: "cashback" | "points" | "credit" | "discount" | "deals";
   rewardEmoji: string;
   rewardLabel: string;
   offerType: string;
@@ -11,6 +11,7 @@ export interface Platform {
   cardConflict: boolean;
   searchQuery: string;
   domainFilter: string;
+  skipSiteOperator?: boolean;
 }
 
 export interface CheckResult {
@@ -63,8 +64,9 @@ export const PLATFORMS: Platform[] = [
     personalized: false,
     cardLink: false,
     cardConflict: false,
-    searchQuery: "",
+    searchQuery: "inkind dining",
     domainFilter: "inkind.com",
+    skipSiteOperator: true,
   },
   {
     name: "Upside",
@@ -124,7 +126,7 @@ export const PLATFORMS: Platform[] = [
     cardLink: true,
     cardConflict: false,
     searchQuery: "dining",
-    domainFilter: "rakuten.com",
+    domainFilter: "rakuten.com/dining",
   },
   {
     name: "Too Good To Go",
@@ -184,6 +186,62 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "restaurant dining certificate NYC",
     domainFilter: "restaurant.com",
+  },
+  {
+    name: "Groupon",
+    url: "https://www.groupon.com",
+    appOnly: false,
+    rewardType: "discount",
+    rewardEmoji: "🏷️",
+    rewardLabel: "Discount (deals)",
+    offerType: "Discount: restaurant deals and vouchers at reduced prices",
+    personalized: false,
+    cardLink: false,
+    cardConflict: false,
+    searchQuery: "restaurant deal NYC",
+    domainFilter: "groupon.com",
+  },
+  {
+    name: "LivingSocial",
+    url: "https://www.livingsocial.com",
+    appOnly: false,
+    rewardType: "discount",
+    rewardEmoji: "🏷️",
+    rewardLabel: "Discount (deals)",
+    offerType: "Discount: local restaurant deals and experiences at reduced prices",
+    personalized: false,
+    cardLink: false,
+    cardConflict: false,
+    searchQuery: "restaurant deal",
+    domainFilter: "livingsocial.com",
+  },
+  {
+    name: "The Infatuation",
+    url: "https://www.theinfatuation.com",
+    appOnly: false,
+    rewardType: "deals",
+    rewardEmoji: "📰",
+    rewardLabel: "Curated Deals",
+    offerType: "Curated Deals: editorial roundups of dining deals, events, and promotions",
+    personalized: false,
+    cardLink: false,
+    cardConflict: false,
+    searchQuery: "restaurant deal NYC",
+    domainFilter: "theinfatuation.com",
+  },
+  {
+    name: "Eater",
+    url: "https://www.eater.com",
+    appOnly: false,
+    rewardType: "deals",
+    rewardEmoji: "📰",
+    rewardLabel: "Deal Coverage",
+    offerType: "Deal Coverage: editorial coverage of restaurant deals, promotions, and dining events",
+    personalized: false,
+    cardLink: false,
+    cardConflict: false,
+    searchQuery: "restaurant deal NYC",
+    domainFilter: "eater.com",
   },
 ];
 

@@ -654,7 +654,7 @@ export async function batchSearch(
     }
 
     console.log(`[cache] MISS search: ${cacheKey}`);
-    const siteOp = platform.domainFilter ? ` site:${platform.domainFilter}` : "";
+    const siteOp = platform.domainFilter && !platform.skipSiteOperator ? ` site:${platform.domainFilter}` : "";
     const baseQuery = platform.searchQuery
       ? `"${name}" ${platform.searchQuery}`
       : `"${name}"`;
@@ -761,6 +761,32 @@ export function isNonNYCResult(title: string, snippet: string, href: string): bo
   return hasNonNYC;
 }
 
+// Extract earning/deal details from search result title and snippet
+export function extractDealDetails(title: string, snippet: string): string | null {
+  const combined = `${title} ${snippet}`;
+  const patterns = [
+    /(\d+(?:\.\d+)?%\s*cash\s*back)/i,
+    /(\d+(?:\.\d+)?x\s*points)/i,
+    /(\d+(?:\.\d+)?\s*points?\s*per\s*(?:dollar|\$))/i,
+    /(\$\d+(?:\.\d+)?\s*off)/i,
+    /(\d+(?:\.\d+)?%\s*off)/i,
+    /(save\s*\$\d+(?:\.\d+)?)/i,
+    /(\d+(?:\.\d+)?\s*miles?\s*per\s*(?:dollar|\$))/i,
+    /(earn\s*\d+(?:\.\d+)?x)/i,
+    /(up\s*to\s*\d+(?:\.\d+)?%\s*(?:cash\s*back|off|savings?))/i,
+    /(\$\d+(?:\.\d+)?\s*(?:credit|bonus|value)\s*(?:for|on)\s*\$\d+(?:\.\d+)?)/i,
+    /(\d+(?:\.\d+)?%\s*(?:discount|savings?))/i,
+  ];
+
+  const found: string[] = [];
+  for (const pattern of patterns) {
+    const match = combined.match(pattern);
+    if (match) found.push(match[1].trim());
+  }
+
+  return found.length > 0 ? found.join(", ") : null;
+}
+
 // Convert raw search results into a CheckResult for a platform
 export function evaluateSearchResults(
   platform: Platform,
@@ -811,10 +837,12 @@ export function evaluateSearchResults(
       if (isNonNYCResult(r.title, r.snippet, r.href)) {
         continue;
       }
+      const dealInfo = extractDealDetails(r.title, r.snippet);
+      const details = dealInfo ? `${r.title} — ${dealInfo}` : (r.title || `Found on ${platform.name}`);
       return {
         platform: platform.name,
         found: true,
-        details: r.title || `Found on ${platform.name}`,
+        details,
         method: "web_search",
         url: r.href.startsWith("http") ? r.href : `https://${r.href}`,
         matches: [],
