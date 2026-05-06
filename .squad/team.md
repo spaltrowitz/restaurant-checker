@@ -17,10 +17,10 @@
 | Fenster | Backend Dev | .squad/agents/fenster/charter.md | 🔧 Active |
 | McManus | Tester | .squad/agents/mcmanus/charter.md | 🧪 Active |
 | Verbal | Product Designer (Beli) | .squad/agents/verbal/charter.md | 🎨 Active |
-| Kobayashi | Product Manager (Beli) | .squad/agents/kobayashi/charter.md | 📊 Active |
+| Kobayashi | Product Manager (Beli) | .squad/agents/kobayashi/charter.md | 📦 Merged → Keaton |
 | Redfoot | Platform SME (Yelp) | .squad/agents/redfoot/charter.md | 🔍 Active |
 | Scribe | Scribe | .squad/agents/scribe/charter.md | 📋 Active |
-| Ralph | Work Monitor | — | 🔄 Monitor |
+| Ralph | Work Monitor | — | ⏸️ Removed |
 
 ## Project Context
 

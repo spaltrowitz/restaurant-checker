@@ -154,6 +154,7 @@ export async function checkBlackbird(name: string): Promise<CheckResult> {
         titleMatchesRestaurant(r.title, name) &&
         matchesRestaurant(`${r.title} ${r.snippet} ${r.href}`, name)
       ) {
+        if (isNonNYCResult(r.title, r.snippet, r.href)) continue;
         return {
           platform: "Blackbird",
           found: true,
@@ -266,6 +267,7 @@ export async function checkUpside(name: string): Promise<CheckResult> {
           titleMatchesRestaurant(r.title, name) &&
           matchesRestaurant(`${r.title} ${r.snippet} ${r.href}`, name)
         ) {
+          if (isNonNYCResult(r.title, r.snippet, r.href)) continue;
           return {
             platform: "Upside",
             found: true,
@@ -536,6 +538,7 @@ export async function checkBilt(name: string): Promise<CheckResult> {
           titleMatchesRestaurant(r.title, name) &&
           matchesRestaurant(`${r.title} ${r.snippet} ${r.href}`, name)
         ) {
+          if (isNonNYCResult(r.title, r.snippet, r.href)) continue;
           return {
             platform: "Bilt Rewards",
             found: true,
@@ -719,6 +722,45 @@ export function isNoResultsPage(title: string, snippet: string): boolean {
   return NO_RESULT_PHRASES.some((phrase) => combined.includes(phrase));
 }
 
+// Non-NYC locations that cause false positives in web search results
+const NON_NYC_LOCATIONS = [
+  // US states (exclude NY)
+  "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
+  "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho",
+  "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana",
+  "maine", "maryland", "massachusetts", "michigan", "minnesota",
+  "mississippi", "missouri", "montana", "nebraska", "nevada",
+  "new hampshire", "new jersey", "new mexico", "north carolina",
+  "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania",
+  "rhode island", "south carolina", "south dakota", "tennessee",
+  "texas", "utah", "vermont", "virginia", "washington", "west virginia",
+  "wisconsin", "wyoming",
+  // Common false-positive cities
+  "miami", "los angeles", "chicago", "houston", "san francisco",
+  "seattle", "boston", "philadelphia", "dallas", "atlanta",
+  "denver", "portland", "las vegas", "san diego", "austin",
+  "nashville", "detroit", "minneapolis", "phoenix", "tampa",
+  "charlotte", "raleigh", "salt lake", "cedar park",
+  // Non-US
+  "london", "paris", "tokyo", "penzance", "montville",
+];
+
+const NYC_INDICATORS = [
+  "new york", "nyc", "manhattan", "brooklyn", "queens", "bronx",
+  "staten island", "upper east", "upper west", "lower east",
+  "east village", "west village", "soho", "tribeca", "chelsea",
+  "midtown", "harlem", "williamsburg", "bushwick", "astoria",
+  "long island city", "flushing", "park slope",
+];
+
+export function isNonNYCResult(title: string, snippet: string, href: string): boolean {
+  const combined = `${title} ${snippet}`.toLowerCase();
+  const hasNYC = NYC_INDICATORS.some((ind) => combined.includes(ind));
+  if (hasNYC) return false;
+  const hasNonNYC = NON_NYC_LOCATIONS.some((loc) => combined.includes(loc));
+  return hasNonNYC;
+}
+
 // Convert raw search results into a CheckResult for a platform
 export function evaluateSearchResults(
   platform: Platform,
@@ -765,6 +807,10 @@ export function evaluateSearchResults(
       titleMatchesRestaurant(r.title, name) &&
       matchesRestaurant(`${r.title} ${r.snippet} ${r.href}`, name)
     ) {
+      // Reject results from non-NYC locations
+      if (isNonNYCResult(r.title, r.snippet, r.href)) {
+        continue;
+      }
       return {
         platform: platform.name,
         found: true,

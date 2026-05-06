@@ -45,3 +45,19 @@ Audited all 7 non-Blackbird reward platforms for public/accessible APIs:
 
 ### Next
 Partner with Kobayashi on outreach sequencing. Confirm inKind + Rakuten interest before dev investment.
+
+## Cross-Project Domain Expert Knowledge (injected 2026-05-02)
+
+### From Scrunch (Marty)
+- **Influencer landscape research methodology:** Ranked 15 influencers by product relevance with follower counts, signature products, and relevance scores (★ system). Cross-referenced their recommendations against existing catalog to find gaps. Scrunch validated that top creators overwhelmingly recommend products already in catalog — gaps were incremental, not fundamental.
+- **Viral routine analysis framework:** When a viral routine surfaces (e.g., HairTok), analyze each product individually against domain standards (CGM rules for Scrunch). Most viral products may be anti-domain (anti-CGM in Scrunch's case) — don't add blindly.
+- **Category expansion from trend signals:** Identified underserved niches (scalp care, bond repair) from influencer trends. New categories should be framed for the underserved audience ("Especially for wavies 2A–2C").
+- **Product categorization audit:** Products marketed one way may functionally belong elsewhere (scalp oils in "oil_serum" → "scalp_care", bond repair in "protein_treatment" → "bond_repair"). Audit by function, not marketing.
+- **Catalog gap analysis pattern:** Compare existing catalog against top-30 most-mentioned products across domain influencers. Prioritize additions by: (1) brand already in catalog, (2) community adoption, (3) price accessibility.
+
+### From HealthStitch (River)
+- **Data pipeline architecture:** Ingestion from multiple sources (Apple Watch, WHOOP) through unified ingest service with batch insert transactions. Both paths trigger baseline computation after ingestion.
+- **Baseline computation patterns:** Rolling averages over configurable windows (30d, 90d) stored in derived tables. Different metrics need different windows.
+- **Performance: expression indexes on computed columns** (`date(recorded_at)`) dramatically improve GROUP BY date queries.
+- **Pre-computed aggregates for dashboards:** Weekly/monthly rollups stored in aggregate tables instead of computing on the fly. Incremental update after each ingest, full recompute available for backfill.
+- **Gap indicators in data:** Fill missing dates with `{ date, has_data: false }` so frontend distinguishes "no data collected" from "value was zero."

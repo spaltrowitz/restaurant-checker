@@ -748,3 +748,64 @@ describe("evaluateSearchResults() false positive filtering", () => {
     expect(result.found).toBe(false);
   });
 });
+
+// ─── isNonNYCResult location filtering ───
+import { isNonNYCResult } from "../checkers";
+
+describe("isNonNYCResult", () => {
+  it("rejects results mentioning non-NYC cities", () => {
+    expect(isNonNYCResult(
+      "Joe's Pizza - Miami, FL",
+      "Great pizza in Miami",
+      "https://restaurant.com/joes-pizza-miami"
+    )).toBe(true);
+  });
+
+  it("rejects results mentioning non-NYC states", () => {
+    expect(isNonNYCResult(
+      "Shake Shack Cedar Park",
+      "Restaurant in Cedar Park, Texas",
+      "https://restaurant.com/shake-shack"
+    )).toBe(true);
+  });
+
+  it("rejects results from UK locations", () => {
+    expect(isNonNYCResult(
+      "Chucky's Shake Shack - Penzance",
+      "Fish and chips in Penzance, Cornwall",
+      "https://toogoodtogo.com/store/123"
+    )).toBe(true);
+  });
+
+  it("allows results with NYC indicators", () => {
+    expect(isNonNYCResult(
+      "Carbone - New York",
+      "Italian restaurant in Greenwich Village, Manhattan",
+      "https://pulsd.com/carbone"
+    )).toBe(false);
+  });
+
+  it("allows results with Brooklyn indicator", () => {
+    expect(isNonNYCResult(
+      "L'Industrie Pizzeria",
+      "Best pizza in Williamsburg, Brooklyn",
+      "https://restaurant.com/lindustrie"
+    )).toBe(false);
+  });
+
+  it("allows results with no location mentioned", () => {
+    expect(isNonNYCResult(
+      "Carbone - Restaurant.com",
+      "Save on dining with discount certificates",
+      "https://restaurant.com/carbone"
+    )).toBe(false);
+  });
+
+  it("NYC indicator overrides non-NYC city", () => {
+    expect(isNonNYCResult(
+      "Best Restaurants NYC",
+      "Carbone in Manhattan beats any Chicago spot",
+      "https://pulsd.com/carbone"
+    )).toBe(false);
+  });
+});

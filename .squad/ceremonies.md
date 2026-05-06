@@ -40,7 +40,6 @@
 3. What should change?
 4. Action items for next iteration
 
-
 ---
 
 ## Retrospective with Enforcement
@@ -60,7 +59,13 @@
 1. What shipped this week? (closed issues, merged PRs)
 2. What did not ship? (open issues, blockers)
 3. Root cause on any failures
-4. Action items -- each MUST become a GitHub Issue labeled retro-action
+4. Action items — each MUST become a GitHub Issue labeled `retro-action`
+
+**Coordinator integration:**
+At round start, call Test-RetroOverdue (see skill retro-enforcement). If overdue, run this ceremony before the work queue.
+
+**Why GitHub Issues, not markdown:**
+Production data: 0% completion across 6 retros using markdown checklists, 100% after switching to GitHub Issues.
 
 **Coordinator integration:**
 At round start, call Test-RetroOverdue (see skill retro-enforcement). If overdue, run this ceremony before the work queue.

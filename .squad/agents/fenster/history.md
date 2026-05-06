@@ -159,3 +159,59 @@ The following learnings come from Backend agents across Shari's other personal p
 - Their API struggles with special characters: `L'Artusi` may not match while `LArtusi` does. Strip apostrophes and diacritics before sending to the API.
 
 **Test count:** 75 → 80 tests. Build green.
+
+### 2025-07-15 Pulsd NYC Platform Addition
+
+**New platform integration:**
+- Added Pulsd (pulsd.com) as 9th platform. Curated prepaid prix-fixe dining deals at 35-69% off in NYC.
+- No dedicated API or checker needed — `batchSearch()` picks it up automatically via Brave Search with `site:pulsd.com` filtering.
+- Adding a web-search-only platform is zero-effort: just add the entry to `PLATFORMS` array with correct `searchQuery` and `domainFilter`. The existing `batchSearch()` pipeline handles everything.
+- Updated platform counts across homepage, about, platforms page, and README (8→9).
+- All 80 tests pass, build green. Commit: 6820498.
+
+### 2025-07-15 Restaurant.com Platform Addition
+
+**New platform integration:**
+- Added Restaurant.com as 10th platform. Discount dining certificates at 50-80% off face value, 500K+ restaurants nationwide.
+- Same zero-effort pattern as Pulsd: add entry to `PLATFORMS` array, `batchSearch()` handles everything via Brave Search with `site:restaurant.com` filtering.
+- Updated platform counts across homepage, about, and platforms pages (9→10). Also updated about page web search count (5→6).
+- All 80 tests pass, build green. Commit: 3ae9071.
+
+### 2025-07-16 API Coverage Expansion (Upside + Rewards Network)
+
+**Upside: All 5 NYC boroughs**
+- Expanded bounding box from Manhattan-only (40.7–40.82 lat, -74.02 to -73.93 lon) to all 5 boroughs (40.49–40.92 lat, -74.26 to -73.68 lon).
+- Covers Staten Island, Brooklyn, Queens, Bronx in addition to Manhattan. Should roughly double restaurant count.
+- Commit: 1b5d225.
+
+**Rewards Network: Location parameter required**
+- Tested API without `location` param: returns `"Invalid location:"` — location is mandatory.
+- The existing 10001 (Midtown Manhattan) with 30-mile radius already covers all of NYC and most of the metro area. No change needed.
+- A name-only national search would have been ideal but the API doesn't support it.
+
+**All 80 tests pass, build green.**
+
+### 2025-07-15 Pre-fetch Cache for Popular NYC Restaurants
+
+**Problem:** Every search for a popular restaurant triggers 6 live Brave API calls (~2,000/month free tier). Repeat searches for "Carbone" or "Joe's Pizza" waste quota on identical results.
+
+**Solution:** Three-tier cache hierarchy: in-memory (1hr TTL) → pre-fetch disk cache (24hr TTL) → live Brave Search.
+
+**New files:**
+- `data/popular-restaurants.ts` — Static list of 150+ popular NYC restaurants (fine dining, pizza, Asian, chains, brunch, etc.)
+- `scripts/prefetch-cache.ts` — Standalone script (`npx tsx scripts/prefetch-cache.ts`) that pre-fetches Brave results for all restaurants × all web-search platforms. Rate-limited 1 req/sec. Saves to `data/search-cache.json`. Supports incremental runs (skips entries cached <24h).
+
+**Changes to `lib/checkers.ts`:**
+- Added `loadPrefetchCache()` — reads disk cache file, re-reads every 5 min max.
+- Added `getPrefetchResults()` — looks up restaurant+platform in disk cache, returns null if stale (>24h) or missing.
+- `batchSearch()` now checks: in-memory → prefetch disk → live Brave. Prefetch hits get promoted to in-memory cache.
+
+**Key design decisions:**
+- Prefetch cache is opt-in (run script manually or via cron), never blocks requests
+- `data/search-cache.json` is gitignored — it's generated data, not source
+- `scripts/` excluded from `tsconfig.json` so Next.js build doesn't typecheck standalone tooling
+- `dotenv` added as devDependency for the prefetch script's env loading
+
+**Impact:** Popular restaurant searches (the majority of traffic) serve instantly from cache. Unknown restaurants fall through to live Brave Search unchanged. Estimated 60-80% reduction in Brave API usage.
+
+**All 80 tests pass, build green. Commit: 309c6f3.**

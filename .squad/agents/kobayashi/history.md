@@ -53,3 +53,18 @@ Drafted comprehensive partnership pitch for Nea, Seated, and Upside platforms. D
 
 ### Status
 Ready for partnership outreach. Pending PM decision on priority sequencing.
+
+## Cross-Project PM/Strategist Knowledge (injected 2026-05-02)
+
+### From Slotted (Mai)
+- **State-aware progressive UI is the key architectural insight:** The root cause of "too busy" isn't individual features — it's that the same sections render for every user regardless of stage. Progressive disclosure based on user milestones solves it at the source.
+- **Smart features are Week 4 features, not Day 1:** Score emojis, activity feeds, and AI suggestions require behavioral data. Showing them before the system has data creates noise and false signals. For EatDiscounted, saved restaurants and alerts are Week 4 — search results are Day 1.
+- **Empty states cascade:** Multiple empty sections stacked create "this app has nothing for me." Better to show one section with one actionable CTA.
+- **Option C scheduling ("How about Saturday 2pm?"):** One suggestion + action beats a ranked list. Apply to EatDiscounted: "Best deal: 20% off at Blackbird" beats showing all 8 platforms equally.
+- **Dual CTA anti-pattern:** When two CTAs compete with equal visual weight, neither wins.
+
+### From Scrunch (Kenickie)
+- **Fastest aha moment wins primary CTA:** Ingredient Checker (15 sec: paste → instant result) beat Product Discovery as primary CTA because it's zero-friction and unique to Scrunch. For EatDiscounted, the search bar IS the fastest aha — protect its primacy.
+- **Visitor flow: Test → Trust → Explore → Personalize.** First interaction builds trust, then users explore deeper features.
+- **Invisible onboarding:** "No gates before value." Don't ask users anything before showing them results. Behavioral signals > explicit profiling.
+- **One unique differentiator should be unmissable:** Whatever only your product does (EatDiscounted = cross-platform deal search) should be the hero, not buried in a feature grid.

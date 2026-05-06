@@ -79,3 +79,54 @@
 - **Test file location:** `lib/__tests__/checkers.test.ts`
 - **Current state:** Brave Search implementation already completed by Fenster. Tests confirm it works correctly.
 - **Total test count:** 65 tests (38 matching + 27 checkers) — all pass
+
+## Cross-Project Tester Knowledge (injected 2026-05-02)
+
+The following learnings come from Tester agents across Shari's other personal projects.
+
+### From MyDailyWin (Purah — Tester)
+- **localStorage sync is a minefield:** Admin writes to `hr_admin_{profile}`, user reads `hr_state_{profile}`. Legacy "stu" profile uses unsuffixed keys, causing silent data splits. Dual-write strategies must be consistent across ALL write paths (e.g., `savePayment` didn't dual-write while `resetUserBalance` did).
+- **Undefined function bugs hide in multi-page apps:** `saveState` called but never defined in admin.html; `IS_LEGACY_PROFILE` referenced but never declared in app.html. When code is split across files without a build step, these only surface at runtime.
+- **Profile-aware testing is essential:** URL param `?profile=X` drove key suffixing. Download functions used unsuffixed keys — worked for legacy profile, broke for all others. Always test with non-default profiles.
+- **Code consolidation verification pattern:** When migrating features between files, verify: no duplicate definitions, no orphaned references, storage keys are profile-suffixed, and HTML sanitization (escapeHtml) is applied to user-facing content.
+- **Parallel agent commits break structural integrity:** After 4 agents committed to shared files simultaneously, found missing closing HTML tags, CSP `connect-src` gaps blocking Cloud Functions, and FOUC from missing script loads. Parallel commits on shared files need a mandatory structural integrity pass.
+- **CSP is fragile across agents:** Each agent only understands their own domain's CSP needs. One agent's CSP changes can break another agent's functionality (e.g., missing `*.cloudfunctions.net` after EmailJS migration).
+
+### From MyDailyWin (Helen — Alumni Tester)
+- **Same critical bugs independently confirmed:** `saveState` undefined, `IS_LEGACY_PROFILE` undefined, storage key mismatches — validates that these are real blockers, not edge cases.
+- **Architecture insight:** 4 user-facing pages sharing state via localStorage creates a combinatorial testing surface. Each page may have divergent implementations of the same logic.
+
+### From MyDailyWin (Robin — Alumni Tester)
+- **Consistent findings across tester rotations:** Three independent testers (Purah, Helen, Robin) all found the same core bugs — proof that systematic code review catches real issues regardless of who does it.
+
+### From MyDailyWin (Riju — Security)
+- **CSP `unsafe-inline` elimination pattern:** Extracted 57+ inline onclick handlers to `data-action` attribute + delegated `document.addEventListener('click', ...)`. Works without build tools. Key insight: CSP meta tag placement order matters — must be in `<head>` before external resource declarations.
+- **Open redirect vulnerability:** `login.html?redirect=` param allowed arbitrary redirects. Always validate redirect targets against an allowlist.
+- **innerHTML XSS vectors:** Profile names from localStorage rendered as innerHTML without escaping in admin reports and task names. Any user-controlled data rendered via innerHTML needs escaping.
+- **Firestore rules gaps:** 4 collections had auth-only access (no ownership scoping) — any authenticated user could read/write other users' payment data. Auth ≠ authorization.
+- **Service worker cache versioning:** When adding external CSS/JS files, bump the SW cache version or old caches will 404 on the new assets.
+
+### From Slotted-AI (Sokka — Tester)
+- **Payload key mismatches are a top failure cause:** Backend used camelCase for some endpoints (`friendIds`, `startTime`) and snake_case for others (`start_time`, `end_time`). No consistency — must inspect each endpoint's `req.body` destructuring. This caused ~10 of 16 test failures.
+- **Polling helper for async assertions:** Created `waitFor<T>(fn, predicate, maxAttempts, delayMs)` to handle notification arrival timing. Default: 5 attempts × 1s. Essential for any test involving async backend operations.
+- **Response mapping mismatches:** Backend returned `{ friendshipId, status, friend: {...} }` but tests assumed `{ id, user_a_id, user_b_id, status }`. `pendingFriendship.id` was always `undefined` → accept went to `/friends/undefined` → 500. Always verify response shape matches client expectations.
+- **Notification type overloading:** `meetup_request` type used for 4+ semantic events (invite, decline, counter-propose, RSVP) — caused false dedup suppression. Watch for type enum reuse.
+- **Account deletion leaves orphaned data:** Deleting meetup_participants + friendships but NOT meetups created by user → FK violations. Deletion flows need comprehensive cascade testing.
+- **Security audit found 4 critical issues:** Outlook tokens leaked to client (not in SENSITIVE_FIELDS), no account deletion endpoint (GDPR violation), hardcoded admin secret fallback, friend list exposed email addresses.
+- **Calendar sync is destructive:** DELETE all → INSERT new creates a brief window with zero availability data. Test for race conditions during sync.
+- **Test coverage analysis pattern:** Map untested critical paths systematically — calendar sync (200+ lines, zero tests), OAuth token refresh, webhook handlers, admin endpoints.
+
+### From Slotted-AI (Josh — Alumni Tester)
+- **Webhook testing rules:** Always return HTTP 200 from webhook endpoint, even for errors — Google deactivates endpoints that return non-200. Webhooks are "something changed" signals, not payloads — must call `events.list` with sync token.
+- **Critical edge cases for calendar sync:** Multi-calendar moves generate delete + create with NEW eventId (looks like false decline). Webhook storms need queue-based debouncing (Cloud Tasks). Stale sync token (410 Gone) requires full re-sync that must NOT create meetups from non-Slotted events.
+- **Soft social dynamics in test language:** Never use "declined," "rejected," "cancelled" — use "can't make it," "stepped out," "updated their RSVP." Test assertions should match the product's UX language.
+
+### From Slotted-AI (Nate — Alumni Tester)
+- **Schema details for sync testing:** `meetup_participants.google_event_id` is the primary join key for two-way sync. `users.calendar_sync_token` enables incremental sync. Apple CalDAV uses deterministic UIDs: `slotted-{meetupId}-{userId}@slotted-ai.web.app`.
+- **OAuth token handling:** Must handle expired AND revoked tokens differently (retry vs. disconnect). Time comparisons must use absolute UTC timestamps, never display-local times.
+
+### From Scrunch (Rizzo — Tester)
+- No testing learnings recorded yet (project in early stage). Stack: React 19, TypeScript, Vite, Tailwind CSS 4, Supabase, Vitest.
+
+### From HealthStitch (Zoe — Tester)
+- No testing learnings recorded yet (project in early stage). Stack: Node.js/Express backend, React/Vite frontend, Swift/SwiftUI iOS, SQLite.

@@ -13,7 +13,7 @@ How to decide who handles what.
 | Testing | McManus | Write tests, find edge cases, verify fixes |
 | Scope & priorities | Keaton | What to build next, trade-offs, decisions |
 | UX & design | Verbal | UI critique, user flows, layout, design direction |
-| Product strategy | Kobayashi | Feature prioritization, user stories, positioning, competitive analysis |
+| Product strategy & scoping | Keaton | Feature prioritization, user stories, positioning, competitive analysis, MVP scoping |
 | Platform expertise | Redfoot | Dining platform analysis, restaurant matching, data quality, competitive intel |
 | Session logging | Scribe | Automatic — never needs routing |
 
@@ -23,6 +23,7 @@ How to decide who handles what.
 |-------|--------|-----|
 | `squad` | Triage: analyze issue, assign `squad:{member}` label | Lead |
 | `squad:{name}` | Pick up issue and complete the work | Named member |
+| `squad:copilot` | Well-defined issue routed to @copilot | @copilot |
 
 ### How Issue Assignment Works
 
@@ -40,3 +41,12 @@ How to decide who handles what.
 5. **"Team, ..." → fan-out.** Spawn all relevant agents in parallel as `mode: "background"`.
 6. **Anticipate downstream work.** If a feature is being built, spawn the tester to write test cases from requirements simultaneously.
 7. **Issue-labeled work** — when a `squad:{member}` label is applied to an issue, route to that member. The Lead handles all `squad` (base label) triage.
+8. **@copilot routing** — well-defined issues with clear specs may be routed to @copilot. Keaton triages and assigns the `squad:copilot` label. See team.md Coding Agent capabilities for routing guidance (🟢/🟡/🔴).
+
+## Optional Agents
+
+| Agent | Role | When to Route |
+|-------|------|---------------|
+| Redfoot | Domain Expert (Platform SME) | Dining platform analysis, restaurant matching, data quality, competitive intel |
+
+> Domain Expert is an optional role. If Redfoot is unavailable, route platform-specific questions to Keaton for triage.
