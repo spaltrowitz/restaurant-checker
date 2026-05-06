@@ -61,3 +61,16 @@ Partner with Kobayashi on outreach sequencing. Confirm inKind + Rakuten interest
 - **Performance: expression indexes on computed columns** (`date(recorded_at)`) dramatically improve GROUP BY date queries.
 - **Pre-computed aggregates for dashboards:** Weekly/monthly rollups stored in aggregate tables instead of computing on the fly. Incremental update after each ingest, full recompute available for backfill.
 - **Gap indicators in data:** Fill missing dates with `{ date, has_data: false }` so frontend distinguishes "no data collected" from "value was zero."
+
+### 2026-05-07 — Data Enrichment Cross-Reference Analysis
+- Cross-referenced 4 API dump catalogs (Bilt 1,918, Rewards Network 1,899, Upside 174, Blackbird 50).
+- **True unique coverage is 2,370 restaurants** — the 4,041 raw count double-counts 1,209 Bilt↔RN overlaps.
+- Bilt and Rewards Network overlap 71% — most NYC cashback restaurants sign up for both card-linking networks.
+- 98 restaurants appear on all 3 NYC platforms (Bilt+RN+Upside). These are the highest-confidence match targets.
+- Blackbird's 50 entries are all Denver — zero NYC overlap. Don't include in NYC counts.
+- Upside's 174 restaurants are 73% redundant with Bilt, but the unique 37 are outer-borough spots worth having.
+- Built `scripts/build-top-500.ts` scoring system: multi-platform presence + existing curated list + neighborhood diversity.
+- Only 17 of the original 150 curated popular restaurants appear in API dumps — the rest are high-end venues that don't do cashback.
+- Top neighborhoods by density: Hell's Kitchen (66), Chelsea (55), Midtown East (52), Williamsburg (43), West Village (40).
+- Name normalization matters: punctuation, apostrophes, and location suffixes cause false non-matches. The norm() function strips to alphanumeric+spaces.
+- Recommend two-tier popular list: showcase tier (famous names for demos) + pre-cache tier (deal-confirmed restaurants for instant results).

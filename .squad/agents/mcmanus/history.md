@@ -130,3 +130,14 @@ The following learnings come from Tester agents across Shari's other personal pr
 
 ### From HealthStitch (Zoe — Tester)
 - No testing learnings recorded yet (project in early stage). Stack: Node.js/Express backend, React/Vite frontend, Swift/SwiftUI iOS, SQLite.
+
+### 2026-07-14 — Brave Search Improvements Test Suite (New Platforms)
+
+- **28 new tests written** in `lib/__tests__/checkers.test.ts` for Fenster's Brave Search improvements. All 28 pass. Total suite now 125 tests (82 checkers + 43 matching).
+- **Test coverage added:**
+  - `extractDealDetails()`: cashback %, points multiplier, $-off, %-off, miles/dollar, null for no-deal text, multiple deals extraction, "up to" phrasing — 8 tests
+  - New platform evaluation (Groupon, LivingSocial, The Infatuation, Eater): found/not-found/wrong-domain for each — 8 tests
+  - Query tuning: inKind skipSiteOperator + domainFilter combo, Rakuten Dining /dining path filtering (rejects non-dining, allows dining) — 3 tests
+  - NYC location filter integration with new platforms: each new platform tested for non-NYC rejection and NYC-indicator allowance — 9 tests
+- **Test data lesson:** When writing NYC filter tests, avoid mentioning "NYC" in snippets for non-NYC test cases (e.g., "brings its NYC magic to Las Vegas" triggers the NYC indicator and passes). Keep test fixture text clean of cross-contamination.
+- **Pattern confirmed:** `evaluateSearchResults()` applies `isNonNYCResult` uniformly to all platforms — new platforms get location filtering automatically with no extra code.

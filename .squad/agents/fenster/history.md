@@ -215,3 +215,29 @@ The following learnings come from Backend agents across Shari's other personal p
 **Impact:** Popular restaurant searches (the majority of traffic) serve instantly from cache. Unknown restaurants fall through to live Brave Search unchanged. Estimated 60-80% reduction in Brave API usage.
 
 **All 80 tests pass, build green. Commit: 309c6f3.**
+
+### 2025-07-16 Brave Search Improvements — Query Tuning, New Platforms, Deal Extraction
+
+**Track 1 — Query tuning for low-hit platforms:**
+- inKind: Removed `site:` restriction (0% hit rate — inKind pages poorly indexed). Now uses broader query `"restaurant name" inkind dining` with `domainFilter` for result validation only. Added `skipSiteOperator` boolean to Platform interface.
+- Rakuten Dining: Tightened `domainFilter` from `rakuten.com` to `rakuten.com/dining`. Eliminates French shopping false positives (e.g. "revue carbone" on rakuten.fr) since non-dining URLs won't contain `/dining` in the path.
+
+**Track 2 — 4 new web search platforms (10 → 14 total):**
+- Groupon: discount deals, `groupon.com`
+- LivingSocial: discount deals, `livingsocial.com`
+- The Infatuation: curated deals (editorial), `theinfatuation.com`
+- Eater: deal coverage (editorial), `eater.com`
+- Added `"deals"` to `rewardType` union for editorial platforms that cover deals/events rather than offering direct discounts.
+- All 4 flow through `batchSearch()` automatically — zero additional checker code needed.
+
+**Track 3 — Deal detail extraction from snippets:**
+- New `extractDealDetails(title, snippet)` function extracts earning info via regex patterns: cashback %, points multipliers, dollar/percent off, miles per dollar, save amounts, credit bonuses.
+- `evaluateSearchResults()` now enriches the `details` field: `${title} — ${extracted}` when patterns found, title-only fallback otherwise.
+- This turns opaque "Found on Groupon" results into actionable "Carbone Deal — 30% off" details.
+
+**Key design decisions:**
+- `skipSiteOperator` is opt-in per platform, not a global change. Only inKind uses it currently.
+- Rakuten's `site:rakuten.com/dining` works because Brave Search treats the path as part of the site restriction.
+- Editorial platforms (Infatuation, Eater) use `rewardType: "deals"` to distinguish from direct-discount platforms.
+
+**Tests: 80 → 125 (all pass). Build green. Commit: c549cd4.**
