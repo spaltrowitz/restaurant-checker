@@ -47,6 +47,10 @@ eatdiscounted.db
 
 # pre-fetch cache (generated data)
 data/search-cache.json
+data/bilt-nyc-restaurants.json
+data/upside-nyc-restaurants.json
+data/rewards-network-nyc-restaurants.json
+data/blackbird-spots.json
 
 # typescript
 *.tsbuildinfo
