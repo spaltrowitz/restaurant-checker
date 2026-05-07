@@ -1,0 +1,87 @@
+PRIVACY POLICY
+EatDiscounted
+Last Updated: May 7, 2026
+
+1. INTRODUCTION
+EatDiscounted ("we," "us," or "our") respects your privacy. This Privacy Policy explains how we collect, use, disclose, and protect your information when you use the EatDiscounted web application.
+
+2. INFORMATION WE COLLECT
+
+EatDiscounted is designed to be used without creating an account. We collect minimal information:
+
+Automatically Collected:
+• Hashed IP address: Your IP address is hashed using SHA-256 (one-way, irreversible) and truncated to 16 characters. We never store your actual IP address. This hash is used solely to associate community reports and favorites with your device.
+• Hashed User-Agent: Combined with your hashed IP to create a per-device identifier for favorites.
+
+User-Provided (optional):
+• Community reports: When you confirm a restaurant is available on a specific platform (e.g., "I found Carbone on Bilt"), we store the restaurant name, platform, and your reporter hash.
+• Favorites: Restaurant names you choose to save.
+
+We do NOT collect:
+• Names, email addresses, or any personal identifiers
+• Payment information
+• Location data
+• Browsing history or tracking data
+
+3. HOW WE USE YOUR INFORMATION
+We use collected information solely for the following purposes:
+• Displaying community-reported platform matches to other users
+• Saving your favorited restaurants for your convenience
+• Rate limiting API requests to prevent abuse (using hashed IP, not stored)
+• Improving search accuracy based on community-confirmed matches
+
+4. INFORMATION SHARING AND DISCLOSURE
+We do not sell, rent, or trade any user information. We share information only in the following limited circumstances:
+
+• Brave Search API: When you search for a restaurant, your search query (restaurant name) is sent to Brave Search to check for platform presence. No personal identifiers are included.
+• Upside API: Restaurant search queries are sent to Upside's offers API using a geographic bounding box. No personal data is included.
+• Bilt Rewards API: We download Bilt's full public merchant catalog to match against your query. No personal data is sent.
+• Rewards Network API: Restaurant name queries are sent to the AAdvantage Dining search API. No personal data is included.
+• Blackbird: We parse Blackbird's public sitemap XML. No personal data is involved.
+• Supabase: Community reports and favorites (with hashed, non-reversible identifiers) are stored in Supabase PostgreSQL.
+• Legal Requirements: When required by law, regulation, or legal process
+
+No external service receives any personal identifier — searches are performed using restaurant names only.
+
+5. DATA SECURITY
+We implement reasonable technical safeguards:
+• IP addresses are hashed with SHA-256 before any storage — your actual IP is never persisted
+• Rate limiting prevents abuse (5 searches per 60 seconds, 10 reports per 60 seconds)
+• All data is transmitted over HTTPS
+• Community reports have unique constraints to prevent duplicate spam
+• All external API results are cached in memory (1-hour TTL) to minimize external API calls
+
+6. DATA STORAGE AND RETENTION
+• Community reports and favorites are stored in Supabase PostgreSQL
+• API response caches are stored in memory and on disk (JSON files) — these contain only restaurant/platform data, no user information
+• Hashed identifiers are retained as long as the associated report or favorite exists
+• You may request deletion of your reports and favorites (identified by your device hash)
+
+7. YOUR RIGHTS AND CHOICES
+You have the following rights:
+• Anonymity: EatDiscounted requires no account, no email, and no personal information to use
+• Community Reports: Participation is voluntary — you can search without ever submitting a report
+• Favorites: You can remove saved favorites at any time
+• Deletion: You may request removal of community reports associated with your device hash
+
+8. COOKIES AND LOCAL STORAGE
+EatDiscounted does not use cookies, localStorage, or any client-side tracking mechanisms. All data is stored server-side with hashed identifiers.
+
+9. THIRD-PARTY SERVICES
+Our application queries the following third-party services to check restaurant availability. Only restaurant names and geographic coordinates are sent — never personal data:
+• Brave Search API: https://brave.com/privacy/browser
+• Supabase (database): https://supabase.com/privacy
+• Upside: https://www.upside.com/privacy-policy
+• Bilt Rewards: https://www.biltrewards.com/privacy
+• Rewards Network (AAdvantage Dining): https://www.rewardsnetwork.com/privacy-policy
+• Blackbird: https://www.blackbird.xyz/privacy
+
+10. CHILDREN'S PRIVACY
+EatDiscounted does not collect personal information from any user, including children. The service is designed for general audiences and does not require age verification since no personal data is collected.
+
+11. CHANGES TO THIS PRIVACY POLICY
+We may update this Privacy Policy from time to time. Changes will be posted on this page with an updated "Last Updated" date.
+
+12. CONTACT US
+If you have questions about this Privacy Policy, contact:
+Email: sharipaltrowitz@gmail.com
