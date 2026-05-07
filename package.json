@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dump-api": "npx tsx scripts/dump-api-data.ts",
+    "prefetch": "npx tsx scripts/prefetch-cache.ts",
+    "build-top-500": "npx tsx scripts/build-top-500.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.9.0",

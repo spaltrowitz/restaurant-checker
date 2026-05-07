@@ -28,12 +28,12 @@ function SearchBarInner() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search any NYC restaurant…"
         aria-label="Search for a restaurant"
-        className="flex-1 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-raised)] px-5 sm:px-6 py-4 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold-glow)] transition-all duration-300 shadow-sm hover:border-[var(--color-gold-dim)]/40"
+        className="flex-1 rounded-2xl border-2 border-[var(--color-border)] bg-white px-6 py-4 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all duration-300 shadow-sm hover:border-orange-200 hover:shadow-md"
         autoFocus
       />
       <button
         type="submit"
-        className="rounded-xl bg-gradient-to-b from-[var(--color-gold-bright)] to-[var(--color-gold)] px-6 sm:px-8 py-4 text-base font-bold text-[var(--color-surface)] transition-all duration-200 hover:from-[var(--color-gold)] hover:to-[var(--color-gold-dim)] hover:shadow-lg hover:shadow-[var(--color-gold-glow)] hover:scale-[1.02] active:scale-[0.98] shadow-md"
+        className="rounded-2xl bg-gradient-to-b from-[#ff8c5a] via-[#ff6b35] to-[#e55a2b] px-7 sm:px-9 py-4 text-base font-bold text-white transition-all duration-200 hover:shadow-lg hover:shadow-orange-200 hover:scale-[1.03] active:scale-[0.97] shadow-md shadow-orange-100"
       >
         Search
       </button>

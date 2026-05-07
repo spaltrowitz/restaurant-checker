@@ -12,6 +12,8 @@ export interface Platform {
   searchQuery: string;
   domainFilter: string;
   skipSiteOperator?: boolean;
+  /** Data confidence tier: 1 = API-verified with earning rates, 2 = web search / unverified */
+  tier: 1 | 2;
 }
 
 export interface CheckResult {
@@ -51,6 +53,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "",
     domainFilter: "",
+    tier: 1,
   },
   {
     name: "inKind",
@@ -67,6 +70,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "inkind dining",
     domainFilter: "inkind.com",
     skipSiteOperator: true,
+    tier: 2,
   },
   {
     name: "Upside",
@@ -82,6 +86,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: true,
     searchQuery: "",
     domainFilter: "upside.com",
+    tier: 1,
   },
   {
     name: "Nea",
@@ -97,6 +102,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: true,
     searchQuery: "",
     domainFilter: "neaapp.ai",
+    tier: 2,
   },
   {
     name: "Bilt Rewards",
@@ -112,6 +118,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "dining",
     domainFilter: "biltrewards.com",
+    tier: 1,
   },
   {
     name: "Rakuten Dining",
@@ -127,6 +134,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "dining",
     domainFilter: "rakuten.com/dining",
+    tier: 2,
   },
   {
     name: "Too Good To Go",
@@ -141,6 +149,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "",
     domainFilter: "toogoodtogo.com",
+    tier: 2,
   },
   {
     name: "Rewards Network",
@@ -156,6 +165,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "",
     domainFilter: "",
+    tier: 1,
   },
   {
     name: "Pulsd",
@@ -171,6 +181,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "restaurant dining deal NYC",
     domainFilter: "pulsd.com",
+    tier: 2,
   },
   {
     name: "Restaurant.com",
@@ -186,6 +197,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "restaurant dining certificate NYC",
     domainFilter: "restaurant.com",
+    tier: 2,
   },
   {
     name: "Groupon",
@@ -200,6 +212,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "restaurant deal NYC",
     domainFilter: "groupon.com",
+    tier: 2,
   },
   {
     name: "LivingSocial",
@@ -214,6 +227,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "restaurant deal",
     domainFilter: "livingsocial.com",
+    tier: 2,
   },
   {
     name: "The Infatuation",
@@ -228,6 +242,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "restaurant deal NYC",
     domainFilter: "theinfatuation.com",
+    tier: 2,
   },
   {
     name: "Eater",
@@ -242,6 +257,7 @@ export const PLATFORMS: Platform[] = [
     cardConflict: false,
     searchQuery: "restaurant deal NYC",
     domainFilter: "eater.com",
+    tier: 2,
   },
 ];
 

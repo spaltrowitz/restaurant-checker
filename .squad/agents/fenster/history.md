@@ -297,3 +297,25 @@ The following learnings come from Backend agents across Shari's other personal p
 - Bilt has the richest data: zip, neighborhood, multiplier, cuisine — ideal for browse features
 - Rewards Network has no top-level address fields — must parse from raw.location.address
 - All 125 existing tests pass, build passes clean
+
+#### 2026-05-06 P1 Favorites API + Browse Pagination
+
+**Gap 2.1 — Favorites system (backend):**
+- Added `favorites` table to SQLite: `user_hash`, `restaurant_name`, `normalized_name`, `UNIQUE(user_hash, normalized_name)`
+- Privacy-preserving ID: SHA256(IP + User-Agent + dedicated salt), no login required
+- Uses same `normalize()` from db.ts for deduplication (not `norm()` from matching.ts — db.ts has its own simpler normalizer)
+- Created `GET/POST/DELETE /api/favorites` with rate limiting (reuses REPORT_LIMIT config)
+- Helper functions: `addFavorite`, `removeFavorite`, `getFavorites`, `isFavorite` + `hashUser` export
+- `INSERT OR IGNORE` for addFavorite — idempotent, no error on duplicate
+
+**Gap 2.5 — Browse pagination:**
+- Added `page` and `limit` query params to `/api/browse?neighborhood=X`
+- Default limit: 50, max: 100, page minimum: 1
+- Response now includes `totalRestaurants`, `page`, `limit`, `totalPages`
+- Browse already loaded ALL restaurants from API dumps — no "popular subset" filtering existed
+- Removed unused `NeighborhoodDetail` interface after pagination refactor
+
+**Key decisions:**
+- Used `hashUser(ip, ua)` with a separate salt from `hashIp(ip)` used for community reports — different identity granularity is intentional
+- `INSERT OR IGNORE` over try/catch for UNIQUE constraint — cleaner for favorites since "already exists" isn't an error
+- 155 tests pass, build green, pushed

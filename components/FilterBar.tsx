@@ -11,12 +11,12 @@ export interface FilterState {
   cardFreeOnly: boolean;
 }
 
-const REWARD_PILLS: { value: RewardFilter; label: string; emoji: string }[] = [
-  { value: "all", label: "All", emoji: "" },
-  { value: "cashback", label: "Cashback", emoji: "💵" },
-  { value: "points", label: "Points/Miles", emoji: "✈️" },
-  { value: "discounts", label: "Discounts", emoji: "🏷️" },
-  { value: "app-rewards", label: "App Rewards", emoji: "📱" },
+const REWARD_PILLS: { value: RewardFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "cashback", label: "Cashback" },
+  { value: "points", label: "Points/Miles" },
+  { value: "discounts", label: "Discounts" },
+  { value: "app-rewards", label: "App Rewards" },
 ];
 
 const STORAGE_KEY = "eatdiscounted-filters";
@@ -112,7 +112,6 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
               }`}
               aria-pressed={isActive}
             >
-              {pill.emoji && <span>{pill.emoji}</span>}
               {pill.label}
             </button>
           );

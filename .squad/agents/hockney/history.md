@@ -123,3 +123,11 @@ Hockney completed 5 sessions: ship-readiness evaluation (audit findings), critic
 - **FilterBar:** `useFilterState` hook encapsulates localStorage persistence with SSR-safe `useEffect` hydration. Avoids hydration mismatch by defaulting to neutral state on initial render.
 - **Reward type mapping:** `app-rewards` filter uses `appOnly` platform field instead of `rewardType` — cleaner semantic mapping.
 - **Filter integration:** Filters apply before sorting in SearchResults. `filteredPlatforms` feeds into `sortedPlatforms` chain. FilterBar only renders post-stream (`isDone`) to avoid confusing mid-search state.
+
+### Favorites UI (Gap 2.1)
+- **FavoritesProvider pattern:** Context wraps entire app via `components/Providers.tsx` (client boundary in server layout). Uses `useFavoritesOptional()` for Nav since static pages prerender without provider — avoids build-time crash.
+- **Optimistic toggle:** `toggleFavorite` updates state immediately, fires API call, reverts on `.catch()`. Uses functional `setFavorites` updater to avoid stale closures.
+- **localStorage cache:** `readLocalStorage` as `useState` initializer for instant UI on page load. `writeLocalStorage` synced via `useEffect` on `favorites` change. API response overwrites cache on mount.
+- **FavoriteButton positioning:** `absolute top-3 right-3` inside `relative` card containers. Added `relative` class to all three ResultCard states (found, unavailable, not-found).
+- **Nav badge:** Red circle badge with count, `absolute -top-2 -right-4`. Caps at "9+" display.
+- **Favorites page:** Follows browse page pattern — hero, empty state with CTA, responsive grid with stagger animations. Cards have "Search deals" (navigates to `/?q={name}`) and "Remove" actions.

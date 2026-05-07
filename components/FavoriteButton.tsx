@@ -32,7 +32,7 @@ export function FavoriteButton({ name }: FavoriteButtonProps) {
       } ${animating ? "scale-125" : "scale-100"}`}
     >
       <span className={`text-lg leading-none transition-transform duration-300 ${animating ? "scale-125" : "scale-100"}`}>
-        {favorited ? "❤️" : "♡"}
+        {favorited ? "★" : "☆"}
       </span>
     </button>
   );

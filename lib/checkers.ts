@@ -458,8 +458,7 @@ function isBiltNYC(r: BiltRestaurant): boolean {
   return false;
 }
 
-async function getBiltRestaurants(query: string): Promise<BiltRestaurant[]> {
-  const cacheKey = `bilt::${norm(query)}`;
+async function getBiltRestaurants(): Promise<BiltRestaurant[]> {
   const cached = biltRestaurantsCache;
   if (cached && Date.now() < cached.expiresAt) {
     console.log("[cache] HIT bilt restaurants");
@@ -495,7 +494,7 @@ async function getBiltRestaurants(query: string): Promise<BiltRestaurant[]> {
 export async function checkBilt(name: string): Promise<CheckResult> {
   const platform = PLATFORMS.find((p) => p.name === "Bilt Rewards")!;
   try {
-    const restaurants = await getBiltRestaurants(name);
+    const restaurants = await getBiltRestaurants();
 
     for (const r of restaurants) {
       if (matchesRestaurant(r.name, name)) {

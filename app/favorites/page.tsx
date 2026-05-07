@@ -14,7 +14,7 @@ export default function FavoritesPage() {
         {/* Hero */}
         <div className="mb-10 text-center sm:text-left">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-[var(--color-text-primary)] tracking-tight">
-            ❤️ Your Saved Restaurants
+            Your Saved Restaurants
           </h1>
           <div className="w-16 h-0.5 bg-[var(--color-gold)] mt-4 opacity-50 mx-auto sm:mx-0" />
           <p className="mt-4 text-[var(--color-text-secondary)] max-w-lg mx-auto sm:mx-0">
@@ -25,20 +25,20 @@ export default function FavoritesPage() {
         {/* Empty state */}
         {favorites.length === 0 && (
           <div className="text-center py-16 animate-fade-in">
-            <span className="text-6xl mb-6 block" role="img" aria-label="No favorites">
-              🍽️
-            </span>
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-orange-100 to-purple-50 flex items-center justify-center">
+              <span className="text-2xl font-black text-[var(--color-text-muted)]">0</span>
+            </div>
             <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-2">
               No favorites yet
             </h2>
             <p className="text-[var(--color-text-secondary)] mb-6 max-w-sm mx-auto">
-              Start searching to save restaurants you love. Tap the ♡ on any result card.
+              Start searching to save restaurants you love.
             </p>
             <Link
               href="/"
               className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-gold)]/15 px-6 py-3 text-sm font-semibold text-[var(--color-gold)] hover:bg-[var(--color-gold)]/25 transition-all duration-200 ring-1 ring-[var(--color-gold)]/30"
             >
-              🔍 Search restaurants
+              Search restaurants
             </Link>
           </div>
         )}
@@ -59,13 +59,13 @@ export default function FavoritesPage() {
                     href={`/?q=${encodeURIComponent(name)}`}
                     className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-gold)]/15 px-4 py-2 text-sm font-semibold text-[var(--color-gold)] hover:bg-[var(--color-gold)]/25 transition-all duration-200 ring-1 ring-[var(--color-gold)]/30"
                   >
-                    🔍 Search deals
+                    Search deals
                   </Link>
                   <button
                     onClick={() => toggleFavorite(name)}
                     className="inline-flex items-center gap-1 rounded-lg bg-red-500/10 px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-all duration-200 ring-1 ring-red-500/20"
                   >
-                    ✕ Remove
+                    Remove
                   </button>
                 </div>
               </div>

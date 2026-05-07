@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
-import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
+import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType, getPlatform } from "@/lib/platforms";
 import { findBestDeal } from "@/lib/best-deal";
 import { ResultCard } from "./ResultCard";
 import { BestDealCard } from "./BestDealCard";
@@ -37,6 +37,7 @@ function SearchResultsInner() {
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useFilterState();
+  const [tier2Expanded, setTier2Expanded] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -132,12 +133,13 @@ function SearchResultsInner() {
     setIsSearching(true);
     setIsDone(false);
     setError(null);
+    setTier2Expanded(false);
 
     fetchCommunityReports(q);
     performFetch(q, controller);
   }, [fetchCommunityReports, performFetch]);
 
-  // Reset state during render when query changes (React-approved derived state pattern)
+  // Reset state during render when query changes
   const [lastQuery, setLastQuery] = useState<string | null>(null);
   if (query !== lastQuery) {
     setLastQuery(query);
@@ -148,6 +150,7 @@ function SearchResultsInner() {
       setIsSearching(true);
       setIsDone(false);
       setError(null);
+      setTier2Expanded(false);
     } else {
       setResults(new Map());
       setCommunityReports(new Map());
@@ -157,7 +160,6 @@ function SearchResultsInner() {
     }
   }
 
-  // Effect handles async side effects via microtask to satisfy lint rule
   useEffect(() => {
     if (!query || query.length < 2) return;
 
@@ -165,7 +167,6 @@ function SearchResultsInner() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    // Wrap in microtask — setState happens in async callbacks, not synchronously
     void Promise.resolve().then(() => {
       fetchCommunityReports(query);
       performFetch(query, controller);
@@ -184,7 +185,6 @@ function SearchResultsInner() {
   ).length;
   const foundCount =
     resultsArr.filter((r) => r.found).length +
-    // Count community-confirmed platforms not already found by search
     Array.from(communityReports.entries()).filter(
       ([platform, report]) =>
         report.count >= 2 && !results.get(platform)?.found
@@ -196,30 +196,9 @@ function SearchResultsInner() {
   ).length;
   const checkedCount = results.size;
 
-  const summaryText = () => {
-    if (isSearching) {
-      return `Checking platforms for "${query}"… (${checkedCount}/${PLATFORMS.length})`;
-    }
-    const parts = [`Results for "${query}"`];
-    if (foundCount > 0) {
-      parts.push(`found on ${foundCount} platform${foundCount !== 1 ? "s" : ""}`);
-    } else {
-      parts.push(`found on 0 platforms`);
-    }
-    if (unavailableCount > 0) {
-      parts.push(`${unavailableCount} need manual check`);
-    }
-    if (communityConfirmedCount > 0) {
-      parts.push(`${communityConfirmedCount} community confirmed`);
-    }
-    return parts.join(" — ");
-  };
-
   // Filter platforms based on active filters
   const filterPlatform = (p: typeof PLATFORMS[number]) => {
-    // Card-free filter
     if (filters.cardFreeOnly && p.cardLink) return false;
-    // Reward type filter
     if (filters.rewardType !== "all") {
       const typeMap: Record<string, string[]> = {
         cashback: ["cashback"],
@@ -239,54 +218,71 @@ function SearchResultsInner() {
 
   const filteredPlatforms = PLATFORMS.filter(filterPlatform);
 
-  // Tiered sorting: API found → Web search found → manual-check → not-found
-  const sortedPlatforms = [...filteredPlatforms].sort((a, b) => {
-    // Name sort overrides relevance
-    if (filters.sortBy === "name") return a.name.localeCompare(b.name);
+  // --- Three-tier grouping ---
+  const isFound = (p: typeof PLATFORMS[number]) => {
+    const r = results.get(p.name);
+    const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
+    return r?.found || communityConfirmed;
+  };
 
-    const aResult = results.get(a.name);
-    const bResult = results.get(b.name);
-    
-    const aFound = aResult?.found || (communityReports.get(a.name)?.count ?? 0) >= 2;
-    const bFound = bResult?.found || (communityReports.get(b.name)?.count ?? 0) >= 2;
-    const aManual = aResult?.searchUnavailable && !aFound;
-    const bManual = bResult?.searchUnavailable && !bFound;
-    const aApi = aFound && aResult?.method === "api";
-    const bApi = bFound && bResult?.method === "api";
-    const aWeb = aFound && !aApi;
-    const bWeb = bFound && !bApi;
-    
-    // Tier 1: API found results
-    if (aApi && !bApi) return -1;
-    if (!aApi && bApi) return 1;
-    // Tier 2: Web search found results
-    if (aWeb && !bWeb) return -1;
-    if (!aWeb && bWeb) return 1;
-    // Then manual-check
-    if (aManual && !bManual) return -1;
-    if (!aManual && bManual) return 1;
-    return 0;
-  });
+  const isManualCheck = (p: typeof PLATFORMS[number]) => {
+    const r = results.get(p.name);
+    const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
+    return r?.searchUnavailable && !communityConfirmed;
+  };
 
-  // Separate not-found platforms after streaming is done
-  const notFoundPlatforms = isDone
-    ? sortedPlatforms.filter((p) => {
-        const r = results.get(p.name);
-        const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
-        return r && !r.found && !r.searchUnavailable && !communityConfirmed;
+  const isNotFound = (p: typeof PLATFORMS[number]) => {
+    const r = results.get(p.name);
+    const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
+    return r && !r.found && !r.searchUnavailable && !communityConfirmed;
+  };
+
+  // During streaming, show all cards as they arrive (no tier grouping yet)
+  // After streaming, organize into tiers
+  const tier1Found = filteredPlatforms.filter((p) => p.tier === 1 && isFound(p));
+  const tier2Found = filteredPlatforms.filter((p) => p.tier === 2 && isFound(p));
+  const manualCheckPlatforms = filteredPlatforms.filter((p) => isManualCheck(p));
+  const notFoundPlatforms = isDone ? filteredPlatforms.filter((p) => isNotFound(p)) : [];
+
+  // Sort within tiers: API method first, then by name
+  const sortWithinTier = (platforms: typeof PLATFORMS) => {
+    if (filters.sortBy === "name") return [...platforms].sort((a, b) => a.name.localeCompare(b.name));
+    return [...platforms].sort((a, b) => {
+      const aResult = results.get(a.name);
+      const bResult = results.get(b.name);
+      const aApi = aResult?.method === "api" ? 1 : 0;
+      const bApi = bResult?.method === "api" ? 1 : 0;
+      return bApi - aApi;
+    });
+  };
+
+  const sortedTier1 = sortWithinTier(tier1Found);
+  const sortedTier2 = sortWithinTier(tier2Found);
+  const sortedManual = sortWithinTier(manualCheckPlatforms);
+
+  // During streaming: flat list sorted by tier awareness
+  const streamingPlatforms = !isDone
+    ? [...filteredPlatforms].sort((a, b) => {
+        if (filters.sortBy === "name") return a.name.localeCompare(b.name);
+        const aResult = results.get(a.name);
+        const bResult = results.get(b.name);
+        const aFound = aResult?.found || (communityReports.get(a.name)?.count ?? 0) >= 2;
+        const bFound = bResult?.found || (communityReports.get(b.name)?.count ?? 0) >= 2;
+        const aApi = aFound && aResult?.method === "api";
+        const bApi = bFound && bResult?.method === "api";
+        if (aApi && !bApi) return -1;
+        if (!aApi && bApi) return 1;
+        if (aFound && !bFound) return -1;
+        if (!aFound && bFound) return 1;
+        return (a.tier - b.tier);
       })
     : [];
 
-  const visiblePlatforms = isDone
-    ? sortedPlatforms.filter((p) => {
-        const r = results.get(p.name);
-        const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
-        return !r || r.found || r.searchUnavailable || communityConfirmed;
-      })
-    : sortedPlatforms;
-
   const apiFoundCount = resultsArr.filter((r) => r.found && r.method === "api").length;
   const webFoundCount = foundCount - apiFoundCount;
+
+  // Get conflicting platforms for inline warnings
+  const conflictPlatforms = conflict?.platforms ?? [];
 
   // Celebration summary card (post-stream)
   const celebrationSummary = isDone && resultsArr.length > 0 && (
@@ -300,9 +296,6 @@ function SearchResultsInner() {
       {foundCount > 0 ? (
         <>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl" role="img" aria-label="celebration">
-              🎉
-            </span>
             <h2 className="text-xl font-bold text-[var(--color-success)]">
               Found on {foundCount} platform{foundCount !== 1 ? "s" : ""}
               {apiFoundCount > 0 || webFoundCount > 0
@@ -313,32 +306,24 @@ function SearchResultsInner() {
                     .filter(Boolean)
                     .join(", ")})`
                 : ""}
-              !
             </h2>
           </div>
           <p className="text-sm text-[var(--color-text-secondary)]">
             Available at:{" "}
-            {sortedPlatforms
-              .filter((p) => {
-                const r = results.get(p.name);
-                const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
-                return r?.found || communityConfirmed;
-              })
+            {[...sortedTier1, ...sortedTier2, ...sortedManual]
+              .filter((p) => isFound(p))
               .map((p) => p.name)
               .join(", ")}
           </p>
           {conflict && (
             <div className="mt-3 pt-3 border-t border-[var(--color-border)] text-sm">
-              <span className="text-[var(--color-warning)]">⚠️ {conflict.message}</span>
+              <span className="text-[var(--color-warning)]">{conflict.message}</span>
             </div>
           )}
         </>
       ) : (
         <>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl" role="img" aria-label="no results">
-              🔍
-            </span>
             <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
               No deals found yet
             </h2>
@@ -352,6 +337,20 @@ function SearchResultsInner() {
           </p>
         </>
       )}
+    </div>
+  );
+
+  // Render a result card for a platform
+  const renderCard = (p: typeof PLATFORMS[number], i: number, showConflict = false) => (
+    <div key={p.name} className={`animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}>
+      <ResultCard
+        platformName={p.name}
+        result={results.get(p.name) ?? null}
+        restaurantName={query}
+        communityReport={communityReports.get(p.name)}
+        onReported={() => fetchCommunityReports(query)}
+        conflictWarning={showConflict && conflictPlatforms.includes(p.name) ? conflict?.message : undefined}
+      />
     </div>
   );
 
@@ -400,22 +399,96 @@ function SearchResultsInner() {
 
       {!error && celebrationSummary}
 
-      {!error && (
+      {/* During streaming: flat list */}
+      {!error && !isDone && (
         <div className="grid gap-3">
-          {visiblePlatforms.map((p, i) => (
-            <div key={p.name} className={`animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}>
-              <ResultCard
-                platformName={p.name}
-                result={results.get(p.name) ?? null}
-                restaurantName={query}
-                communityReport={communityReports.get(p.name)}
-                onReported={() => fetchCommunityReports(query)}
-              />
-            </div>
-          ))}
+          {streamingPlatforms.map((p, i) => renderCard(p, i, true))}
         </div>
       )}
 
+      {/* After streaming: tiered sections */}
+      {!error && isDone && (
+        <div className="space-y-6">
+          {/* Tier 1: Verified API Results */}
+          {sortedTier1.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                  Verified Platforms
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  — Real-time API data
+                </span>
+              </div>
+              <div className="grid gap-3">
+                {sortedTier1.map((p, i) => renderCard(p, i, true))}
+              </div>
+            </section>
+          )}
+
+          {/* Manual check platforms (mixed in with found) */}
+          {sortedManual.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warning)]">
+                  Manual Check Needed
+                </span>
+              </div>
+              <div className="grid gap-3">
+                {sortedManual.map((p, i) => renderCard(p, i, false))}
+              </div>
+            </section>
+          )}
+
+          {/* Tier 2: Web Search Results — collapsible */}
+          {sortedTier2.length > 0 && (
+            <section>
+              <button
+                onClick={() => setTier2Expanded(!tier2Expanded)}
+                className="flex items-center gap-2 mb-3 group cursor-pointer"
+                aria-expanded={tier2Expanded}
+              >
+                <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
+                  Found via Web Search
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  — {sortedTier2.length} platform{sortedTier2.length !== 1 ? "s" : ""}
+                </span>
+                <span className={`text-xs text-[var(--color-text-muted)] transition-transform duration-200 ${tier2Expanded ? "rotate-180" : ""}`}>
+                  ▼
+                </span>
+              </button>
+              {!tier2Expanded ? (
+                <div className="flex flex-wrap gap-2 animate-fade-in">
+                  {sortedTier2.map((p) => {
+                    const platform = getPlatform(p.name);
+                    return (
+                      <span
+                        key={p.name}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface-overlay)] px-3 py-1.5 text-xs font-medium text-blue-300 ring-1 ring-blue-500/20"
+                      >
+                        {p.name}
+                      </span>
+                    );
+                  })}
+                  <button
+                    onClick={() => setTier2Expanded(true)}
+                    className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 ring-1 ring-blue-500/20 hover:bg-blue-500/20 transition-colors"
+                  >
+                    Show details →
+                  </button>
+                </div>
+              ) : (
+                <div className="grid gap-3 animate-fade-in">
+                  {sortedTier2.map((p, i) => renderCard(p, i, true))}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+      )}
+
+      {/* Not found — collapsed line */}
       {notFoundPlatforms.length > 0 && (
         <div className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-50 animate-fade-in transition-all duration-300 hover:opacity-70">
           <p className="text-sm text-[var(--color-text-muted)]">

@@ -3,19 +3,10 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
-const CURATED_NYC = [
-  "Carbone",
-  "Tatiana",
-  "Thai Diner",
-  "Oxomoco",
-  "Dhamaka",
-  "Los Tacos No. 1",
-  "Joe's Pizza",
-  "Lilia",
-  "Don Angie",
-  "Lovely Day",
-  "Bonnie's",
-  "Win Son",
+const QUICK_SEARCHES = [
+  "Carbone", "Joe's Pizza", "Los Tacos No. 1", "Thai Diner",
+  "Dhamaka", "Don Angie", "Oxomoco", "Win Son",
+  "Tatiana", "Lilia", "Lovely Day", "Bonnie's",
 ];
 
 function PopularSearchesInner() {
@@ -25,22 +16,18 @@ function PopularSearchesInner() {
 
   if (query) return null;
 
-  function handleClick(name: string) {
-    router.push(`/?q=${encodeURIComponent(name)}`);
-  }
-
   return (
-    <div className="mt-16">
-      <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-widest mb-4">
-        Popular searches
+    <div className="mt-16 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+      <p className="text-center text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-widest mb-6">
+        Try a quick search
       </p>
-      <div className="flex flex-wrap gap-2.5">
-        {CURATED_NYC.map((name) => (
+      <div className="flex flex-wrap gap-2.5 justify-center">
+        {QUICK_SEARCHES.map((name) => (
           <button
             key={name}
-            onClick={() => handleClick(name)}
+            onClick={() => router.push(`/?q=${encodeURIComponent(name)}`)}
             aria-label={`Search for ${name}`}
-            className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-5 py-2.5 text-sm font-medium text-[var(--color-text-secondary)] transition-all duration-200 hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] hover:bg-[var(--color-gold-glow)] hover:scale-[1.03] active:scale-[0.97]"
+            className="rounded-full border border-[var(--color-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--color-text-secondary)] transition-all duration-300 hover:border-[var(--color-gold)]/50 hover:text-[var(--color-text-primary)] hover:shadow-md hover:shadow-orange-50 hover:scale-[1.04] active:scale-[0.97]"
           >
             {name}
           </button>

@@ -8,19 +8,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "EatDiscounted — Find Restaurant Discount Platforms",
+  title: "EatDiscounted — Every Deal at Any NYC Restaurant",
   description:
-    "Check which dining discount platforms list your favorite restaurant. Compare Blackbird, inKind, Bilt, Rakuten Dining, Too Good To Go, and more.",
+    "Find every deal, discount & reward at any NYC restaurant. 4 verified APIs, 8 airline programs, cashback & points — one search, every platform.",
   openGraph: {
-    title: "EatDiscounted — Find Restaurant Discount Platforms",
-    description: "Check which dining discount platforms list your favorite restaurant.",
+    title: "EatDiscounted — Every Deal at Any NYC Restaurant",
+    description: "Find every deal, discount & reward at any NYC restaurant. 4 verified APIs, 8 airline programs, cashback & points.",
     type: "website",
     siteName: "EatDiscounted",
   },
   twitter: {
-    card: "summary",
-    title: "EatDiscounted — Find Restaurant Discount Platforms",
-    description: "Check which dining discount platforms list your favorite restaurant.",
+    card: "summary_large_image",
+    title: "EatDiscounted — Every Deal at Any NYC Restaurant",
+    description: "Find every deal, discount & reward at any NYC restaurant. 4 verified APIs, 8 airline programs, cashback & points.",
   },
 };
 
@@ -35,11 +35,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.className} h-full antialiased dark`}>
+    <html lang="en" className={`${inter.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[var(--color-surface)] text-[var(--color-text-primary)]">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--color-surface-overlay)] focus:text-[var(--color-gold)] focus:rounded"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-gold)] focus:rounded focus:shadow-lg"
         >
           Skip to content
         </a>

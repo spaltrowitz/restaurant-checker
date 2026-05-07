@@ -172,7 +172,7 @@ export default function BrowsePage() {
         {/* Neighborhood grid */}
         {!loading && !error && neighborhoods.length === 0 && (
           <div className="text-center py-16">
-            <span className="text-4xl mb-4 block" role="img" aria-label="No data">📭</span>
+            <span className="text-4xl mb-4 block font-black text-[var(--color-text-muted)]" aria-label="No data">—</span>
             <p className="text-[var(--color-text-secondary)]">No neighborhoods available yet. Check back soon!</p>
           </div>
         )}

@@ -16,19 +16,50 @@ interface ResultCardProps {
   restaurantName?: string;
   communityReport?: CommunityReportInfo;
   onReported?: () => void;
+  conflictWarning?: string;
 }
+
+// Extract the primary earning metric from a details string
+function extractEarningRate(details: string): string | null {
+  const patterns = [
+    /(\d+(?:\.\d+)?%\s*cash\s*back)/i,
+    /(\d+(?:\.\d+)?x\s*points?\s*(?:per\s*(?:dollar|\$)|\/\$)?)/i,
+    /(\d+(?:\.\d+)?\s*miles?\s*(?:per\s*(?:dollar|\$)|\/\$))/i,
+    /(earn\s*\d+(?:\.\d+)?x)/i,
+    /(up\s*to\s*\d+(?:\.\d+)?(?:x|%)\s*(?:cash\s*back|miles?|points?))/i,
+    /(\d+(?:\.\d+)?%\s*off)/i,
+    /(\$\d+(?:\.\d+)?\s*(?:credit|bonus)\s*(?:for|on)\s*\$\d+(?:\.\d+)?)/i,
+  ];
+  for (const p of patterns) {
+    const m = details.match(p);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
+const REWARDS_NETWORK_PROGRAMS = [
+  { name: "American Airlines", key: "AA" },
+  { name: "United Airlines", key: "United" },
+  { name: "Southwest Airlines", key: "Southwest" },
+  { name: "Delta Airlines", key: "Delta" },
+  { name: "JetBlue", key: "JetBlue" },
+  { name: "Hilton Hotels", key: "Hilton" },
+  { name: "Hyatt Hotels", key: "Hyatt" },
+  { name: "Marriott Bonvoy", key: "Marriott" },
+  { name: "Choice Hotels", key: "Choice" },
+];
 
 function CommunityBadge({ report }: { report: CommunityReportInfo }) {
   if (report.count >= 2) {
     return (
       <span className="inline-flex items-center rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-medium text-purple-300 ring-1 ring-purple-500/20">
-        👥 Community confirmed ({report.count})
+        Community confirmed ({report.count})
       </span>
     );
   }
   return (
     <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]">
-      👤 1 user reported
+      1 user reported
     </span>
   );
 }
@@ -78,7 +109,7 @@ function ReportButton({
       disabled={status === "loading"}
       className="mt-1 inline-flex items-center gap-1 rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-300 hover:bg-purple-500/20 transition-all duration-200 disabled:opacity-50 ring-1 ring-purple-500/20"
     >
-      {status === "loading" ? "Reporting…" : "🙋 I found this here"}
+      {status === "loading" ? "Reporting…" : "I found this here"}
     </button>
   );
 }
@@ -93,9 +124,9 @@ function ExplainerButton({ platformName }: { platformName: string }) {
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         aria-label={`How ${platformName} works`}
-        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:bg-[var(--color-surface-overlay)] transition-colors text-xs"
+        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:bg-[var(--color-surface-overlay)] transition-colors text-xs font-bold"
       >
-        ℹ️
+        ?
       </button>
       <PlatformExplainer
         platformName={platformName}
@@ -107,16 +138,49 @@ function ExplainerButton({ platformName }: { platformName: string }) {
   );
 }
 
+function RewardsNetworkExpander({ details }: { details: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Parse earning rate from details if present (e.g. "5x miles per dollar")
+  const rateMatch = details.match(/(\d+)x?\s*(miles?|points?)/i);
+  const rateDisplay = rateMatch ? `Up to ${rateMatch[1]}x ${rateMatch[2]}/$` : "Earn miles & points per $1";
+
+  return (
+    <div className="mt-3">
+      <p className="text-lg font-extrabold text-[var(--color-gold)]">{rateDisplay}</p>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+        aria-expanded={expanded}
+      >
+        {expanded ? "Hide programs ▲" : `View all ${REWARDS_NETWORK_PROGRAMS.length} programs ▼`}
+      </button>
+      {expanded && (
+        <div className="mt-2 grid gap-1 animate-fade-in">
+          {REWARDS_NETWORK_PROGRAMS.map((prog) => (
+            <div key={prog.key} className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] py-0.5">
+              <span className="w-1 h-1 rounded-full bg-[var(--color-text-muted)]"></span>
+              <span>{prog.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ResultCard({
   result,
   platformName,
   restaurantName,
   communityReport,
   onReported,
+  conflictWarning,
 }: ResultCardProps) {
   const platform = getPlatform(platformName);
+  const isTier1 = platform?.tier === 1;
 
-  // Loading state — improved skeleton
+  // Loading state
   if (!result) {
     return (
       <div className="flex items-start gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-5 animate-slide-in">
@@ -137,60 +201,71 @@ export function ResultCard({
     );
   }
 
-  // Community-confirmed (2+ reports) upgrades display even if search didn't find it
   const communityConfirmed = communityReport && communityReport.count >= 2;
-
   const isApiResult = result.method === "api";
   const isWebSearch = result.method === "web_search";
-
-  // Extract Rewards Network partner subtitle from details
-  const rewardsNetworkSubtitle =
-    platformName === "Rewards Network" && result.details?.includes("Works with")
-      ? result.details.split("Works with")[1]?.trim()
-      : platformName === "Rewards Network"
-        ? "Powers AA, United, Southwest, Hilton, Hyatt, Marriott, JetBlue, Choice"
-        : null;
+  const earningRate = result.details ? extractEarningRate(result.details) : null;
+  const isRewardsNetwork = platformName === "Rewards Network";
 
   // FOUND state
   if (result.found || communityConfirmed) {
-    const borderClass = isApiResult
-      ? "border-2 border-emerald-500/40 hover:border-emerald-500/60"
-      : "border-2 border-blue-400/30 hover:border-blue-400/50";
-    const bgClass = isApiResult
+    const borderClass = isTier1
+      ? isApiResult
+        ? "border-2 border-[var(--color-tier1-border)] hover:border-emerald-400/70"
+        : "border-2 border-emerald-500/40 hover:border-emerald-500/60"
+      : "border border-[var(--color-tier2-border)] hover:border-blue-400/40";
+
+    const bgClass = isTier1
       ? "bg-gradient-to-br from-[var(--color-api-green-dim)] to-[var(--color-surface-raised)]"
       : "bg-gradient-to-br from-[var(--color-web-blue-dim)] to-[var(--color-surface-raised)]";
-    const shadowClass = isApiResult
+
+    const shadowClass = isTier1
       ? "hover:shadow-lg hover:shadow-emerald-500/10"
-      : "hover:shadow-lg hover:shadow-blue-500/10";
+      : "hover:shadow-md hover:shadow-blue-500/5";
+
+    const paddingClass = isTier1 ? "p-6" : "p-4";
 
     return (
-      <div className={`relative flex items-start gap-4 rounded-xl ${borderClass} ${bgClass} p-5 animate-fade-in-up transition-all duration-300 ${shadowClass}`}>
+      <div className={`relative flex items-start gap-4 rounded-xl ${borderClass} ${bgClass} ${paddingClass} animate-fade-in-up transition-all duration-300 ${shadowClass}`}>
         {restaurantName && <FavoriteButton name={restaurantName} />}
-        <span className="mt-0.5 text-xl" aria-label="Found" role="img">✅</span>
+        <span className="mt-1 w-2 h-2 rounded-full bg-green-500 shrink-0" aria-label="Found"></span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-bold text-[var(--color-text-primary)]">{platformName}</p>
+            <p className={`font-bold text-[var(--color-text-primary)] ${isTier1 ? "text-base" : "text-sm"}`}>
+              {platformName}
+            </p>
             <ExplainerButton platformName={platformName} />
             {platform && (
               <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-3 py-1 text-xs font-semibold text-[var(--color-gold)] ring-1 ring-[var(--color-gold)]/30">
-                {platform.rewardEmoji} {platform.rewardLabel}
+                {platform.rewardLabel}
               </span>
             )}
             {isApiResult && (
               <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400 ring-1 ring-emerald-500/20">
-                ✓ Verified
+                Verified
               </span>
             )}
             {isWebSearch && (
               <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-400 ring-1 ring-blue-500/20">
-                🔍 Web search
+                Web search
               </span>
             )}
             {communityReport && <CommunityBadge report={communityReport} />}
           </div>
-          {isApiResult && result.found ? (
-            <p className="mt-2 text-base font-bold text-[var(--color-text-primary)]">
-              {result.details}
+
+          {/* Earning rate prominence for Tier 1 */}
+          {isTier1 && isRewardsNetwork && result.found ? (
+            <RewardsNetworkExpander details={result.details} />
+          ) : isTier1 && earningRate ? (
+            <p className="mt-2 text-lg font-extrabold text-[var(--color-gold)]">
+              {earningRate}
+            </p>
+          ) : null}
+
+          {/* Details text */}
+          {isTier1 && isApiResult && result.found ? (
+            <p className={`${earningRate || isRewardsNetwork ? "mt-1 text-sm text-[var(--color-text-secondary)]" : "mt-2 text-base font-bold text-[var(--color-text-primary)]"}`}>
+              {earningRate || isRewardsNetwork ? result.details.replace(earningRate ?? "", "").trim() || result.details : result.details}
             </p>
           ) : (
             <p className="mt-2 text-sm text-[var(--color-text-secondary)] truncate">
@@ -199,11 +274,14 @@ export function ResultCard({
                 : `Community confirmed on ${platformName}`}
             </p>
           )}
-          {rewardsNetworkSubtitle && (
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-              ✈️ {rewardsNetworkSubtitle}
-            </p>
+
+          {/* Inline conflict warning */}
+          {conflictWarning && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-warning)]">
+              <span>Requires different card than other platforms</span>
+            </div>
           )}
+
           {result.url && result.found && (
             <a
               href={result.url}
@@ -226,7 +304,7 @@ export function ResultCard({
           )}
           {platform?.personalized && (
             <p className="mt-3 text-xs text-[var(--color-warning)]">
-              ⚠️ Offers are personalized — your discount may differ
+              Offers are personalized — your discount may differ
             </p>
           )}
         </div>
@@ -239,14 +317,14 @@ export function ResultCard({
     return (
       <div className="relative flex items-start gap-4 rounded-xl border-2 border-[var(--color-warning)]/30 bg-gradient-to-br from-[var(--color-warning-dim)] to-[var(--color-surface-raised)] p-5 animate-fade-in-up transition-all duration-300 hover:border-[var(--color-warning)]/50 hover:shadow-lg hover:shadow-amber-500/10">
         {restaurantName && <FavoriteButton name={restaurantName} />}
-        <span className="mt-0.5 text-xl" aria-label="Manual check needed" role="img">🔗</span>
+        <span className="mt-1 w-2 h-2 rounded-full bg-amber-500 shrink-0" aria-label="Manual check needed"></span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-bold text-[var(--color-warning)]">{platformName}</p>
             <ExplainerButton platformName={platformName} />
             {platform && (
               <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-3 py-1 text-xs font-semibold text-[var(--color-text-secondary)] ring-1 ring-[var(--color-border)]">
-                {platform.rewardEmoji} {platform.rewardLabel}
+                {platform.rewardLabel}
               </span>
             )}
             {communityReport && <CommunityBadge report={communityReport} />}
@@ -259,7 +337,7 @@ export function ResultCard({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-warning)]/15 px-4 py-2 text-sm font-semibold text-[var(--color-warning)] hover:bg-[var(--color-warning)]/25 transition-all duration-200 ring-1 ring-[var(--color-warning)]/30"
             >
-              {platform?.appOnly ? "📱 Open app" : "🔗 Open"} {platformName} →
+              {platform?.appOnly ? "Open app" : "Open"} {platformName} →
             </a>
             {restaurantName && (
               <ReportButton
@@ -274,11 +352,11 @@ export function ResultCard({
     );
   }
 
-  // NOT FOUND state — subtle, collapsed feel
+  // NOT FOUND state
   return (
     <div className="relative flex items-start gap-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-60 animate-fade-in transition-all duration-300 hover:opacity-90 hover:border-[var(--color-border)]">
       {restaurantName && <FavoriteButton name={restaurantName} />}
-      <span className="mt-0.5 text-lg text-[var(--color-text-muted)]" aria-label="Not found" role="img">—</span>
+      <span className="mt-1 w-2 h-2 rounded-full bg-[var(--color-text-muted)] shrink-0 opacity-50" aria-label="Not found"></span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-medium text-[var(--color-text-muted)]">{platformName}</p>
@@ -294,7 +372,7 @@ export function ResultCard({
               rel="noopener noreferrer"
               className="inline-block text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
             >
-              📱 Check the app →
+              Check the app →
             </a>
           )}
           {restaurantName && (

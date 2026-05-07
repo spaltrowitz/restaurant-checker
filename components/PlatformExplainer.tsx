@@ -193,7 +193,7 @@ export function PlatformExplainer({ platformName, isOpen, onClose, anchorRef }: 
         {isCardLinked && (
           <div className="mt-4 pt-3 border-t border-[var(--color-border)]">
             <p className="text-xs text-[var(--color-warning)] leading-relaxed">
-              ⚠️ Card-linked platforms (Upside, Nea, Rewards Network) may conflict — you can usually only link one per credit card.
+              Card-linked platforms (Upside, Nea, Rewards Network) may conflict — you can usually only link one per credit card.
             </p>
           </div>
         )}
