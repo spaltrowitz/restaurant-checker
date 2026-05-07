@@ -34,6 +34,19 @@ function getDb(): Database.Database {
       );
       CREATE INDEX IF NOT EXISTS idx_favorites_user
         ON favorites(user_hash);
+
+      CREATE TABLE IF NOT EXISTS search_queries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query TEXT NOT NULL,
+        query_normalized TEXT NOT NULL,
+        result_count INTEGER NOT NULL DEFAULT 0,
+        platforms_found TEXT,
+        searched_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_search_queries_normalized
+        ON search_queries(query_normalized);
+      CREATE INDEX IF NOT EXISTS idx_search_queries_searched_at
+        ON search_queries(searched_at);
     `);
   }
   return _db;
@@ -148,4 +161,54 @@ export function isFavorite(userHash: string, restaurantName: string): boolean {
     SELECT 1 FROM favorites WHERE user_hash = ? AND normalized_name = ? LIMIT 1
   `).get(userHash, normalized);
   return !!row;
+}
+
+// --- Search Query Logging ---
+
+export function logSearch(query: string, platformsFound: string[]): void {
+  const db = getDb();
+  const normalized = normalize(query);
+  db.prepare(`
+    INSERT INTO search_queries (query, query_normalized, result_count, platforms_found)
+    VALUES (?, ?, ?, ?)
+  `).run(query.trim(), normalized, platformsFound.length, platformsFound.join(",") || null);
+}
+
+export interface PopularSearch {
+  query: string;
+  searchCount: number;
+  lastSearched: string;
+}
+
+export function getPopularSearches(limit = 50): PopularSearch[] {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT query, COUNT(*) as search_count, MAX(searched_at) as last_searched
+    FROM search_queries
+    GROUP BY query_normalized
+    ORDER BY search_count DESC
+    LIMIT ?
+  `).all(limit) as Array<{ query: string; search_count: number; last_searched: string }>;
+  return rows.map((r) => ({
+    query: r.query,
+    searchCount: r.search_count,
+    lastSearched: r.last_searched,
+  }));
+}
+
+export function getTrendingSearches(hours = 24, limit = 20): PopularSearch[] {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT query, COUNT(*) as search_count, MAX(searched_at) as last_searched
+    FROM search_queries
+    WHERE searched_at >= datetime('now', '-' || ? || ' hours')
+    GROUP BY query_normalized
+    ORDER BY search_count DESC
+    LIMIT ?
+  `).all(hours, limit) as Array<{ query: string; search_count: number; last_searched: string }>;
+  return rows.map((r) => ({
+    query: r.query,
+    searchCount: r.search_count,
+    lastSearched: r.last_searched,
+  }));
 }

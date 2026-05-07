@@ -8,6 +8,7 @@ import {
   evaluateSearchResults,
 } from "@/lib/checkers";
 import { rateLimit, CHECK_LIMIT } from "@/lib/rate-limit";
+import { logSearch } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -121,6 +122,13 @@ export async function GET(request: Request) {
               })}\n\n`
             )
           );
+        }
+
+        // Log anonymous search query for cache optimization and trending
+        try {
+          logSearch(query, foundPlatforms);
+        } catch {
+          // Non-critical — don't break search if logging fails
         }
 
         controller.enqueue(

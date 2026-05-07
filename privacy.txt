@@ -12,6 +12,7 @@ EatDiscounted is designed to be used without creating an account. We collect min
 Automatically Collected:
 • Hashed IP address: Your IP address is hashed using SHA-256 (one-way, irreversible) and truncated to 16 characters. We never store your actual IP address. This hash is used solely to associate community reports and favorites with your device.
 • Hashed User-Agent: Combined with your hashed IP to create a per-device identifier for favorites.
+• Search queries: Restaurant names you search for are logged anonymously (without any user identifier) to improve search suggestions and caching. No personal information is associated with search queries.
 
 User-Provided (optional):
 • Community reports: When you confirm a restaurant is available on a specific platform (e.g., "I found Carbone on Bilt"), we store the restaurant name, platform, and your reporter hash.

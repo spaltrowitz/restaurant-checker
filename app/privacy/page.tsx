@@ -28,6 +28,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>Hashed IP address:</strong> Your IP address is hashed using SHA-256 (one-way, irreversible) and truncated to 16 characters. We never store your actual IP address.</li>
               <li><strong>Hashed User-Agent:</strong> Combined with your hashed IP to create a per-device identifier for favorites.</li>
+              <li><strong>Search queries:</strong> Restaurant names you search are logged anonymously (no user identifier) to improve search suggestions and caching.</li>
             </ul>
             <p className="font-semibold text-[var(--color-text-primary)] mt-3 mb-1">User-Provided (optional):</p>
             <ul className="list-disc pl-5 space-y-1">
