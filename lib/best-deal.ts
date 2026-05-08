@@ -10,8 +10,6 @@ export interface BestDeal {
   rewardEmoji: string;
 }
 
-const API_PLATFORMS_WITH_RATES = new Set(["Bilt Rewards", "Rewards Network"]);
-
 const SAVINGS_PATTERNS: RegExp[] = [
   /(\d+(?:\.\d+)?%\s*cash\s*back)/i,
   /(\d+(?:\.\d+)?x\s*points)/i,
@@ -36,22 +34,31 @@ function hasDealDetails(details: string): boolean {
   return SAVINGS_PATTERNS.some((p) => p.test(details));
 }
 
+// Cashback/discount platforms that give real money back
+const CASHBACK_PLATFORMS = new Set(["Upside", "Nea", "Rakuten Dining"]);
+const DISCOUNT_PLATFORMS = new Set(["Too Good To Go", "Pulsd", "Restaurant.com", "Groupon", "LivingSocial", "inKind"]);
+
 function rankResult(result: CheckResult): number {
-  // Tier 1: API results with explicit earning rates (Bilt multipliers, RN miles)
-  if (result.method === "api" && API_PLATFORMS_WITH_RATES.has(result.platform)) {
-    return 300;
+  // Tier 1a: API cashback results (Upside — real money back)
+  if (result.method === "api" && CASHBACK_PLATFORMS.has(result.platform)) {
+    return 400;
   }
-  // Tier 1b: Other API results (Upside cashback, Blackbird)
+  // Tier 1b: API results with discount/credit (Blackbird, Bilt — points but from API)
   if (result.method === "api" || result.method === "sitemap") {
     return 200;
   }
-  // Tier 2: Web search with extracted deal details
+  // Tier 2: Web search with extracted deal details (actual % or $ amounts)
   if (result.method === "web_search" && hasDealDetails(result.details)) {
+    // Cashback/discount platforms rank higher than points
+    if (CASHBACK_PLATFORMS.has(result.platform) || DISCOUNT_PLATFORMS.has(result.platform)) {
+      return 150;
+    }
     return 100;
   }
-  // Tier 3: Web search with just titles
+  // Tier 3: Web search found but no deal details — NOT a deal, just a listing
+  // These should never be "Best Deal"
   if (result.method === "web_search") {
-    return 50 + Math.min(result.details.length, 40);
+    return 10;
   }
   return 0;
 }
@@ -66,6 +73,9 @@ export function findBestDeal(results: CheckResult[]): {
   found.sort((a, b) => rankResult(b) - rankResult(a));
 
   const winner = found[0];
+  // Don't show "Best Deal" if the top result is just a web listing with no deal info
+  if (rankResult(winner) <= 10) return null;
+
   const platform = getPlatform(winner.platform);
 
   return {
@@ -76,8 +86,8 @@ export function findBestDeal(results: CheckResult[]): {
       url: winner.url,
       savingsEstimate: extractSavingsEstimate(winner.details),
       rewardLabel: platform?.rewardLabel ?? "",
-      rewardEmoji: platform?.rewardEmoji ?? "🍽️",
+      rewardEmoji: platform?.rewardEmoji ?? "",
     },
-    otherDealsCount: found.length - 1,
+    otherDealsCount: found.filter((r) => r !== winner && rankResult(r) > 10).length,
   };
 }

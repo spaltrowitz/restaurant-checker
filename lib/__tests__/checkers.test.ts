@@ -233,8 +233,6 @@ describe("batchSearch()", () => {
       "Restaurant.com",
       "Groupon",
       "LivingSocial",
-      "The Infatuation",
-      "Eater",
     ];
 
     for (const name of platformNames) {
@@ -1037,93 +1035,7 @@ describe("evaluateSearchResults() new platforms", () => {
     expect(result.found).toBe(false);
   });
 
-  // --- The Infatuation ---
-  it("The Infatuation: finds deal roundup mentioning restaurant", () => {
-    const platform = makePlatform({
-      name: "The Infatuation",
-      domainFilter: "theinfatuation.com",
-      rewardType: "deals",
-    });
-
-    const result = evaluateSearchResults(platform, "Carbone", {
-      results: [
-        {
-          title: "Carbone Restaurant Week Deal | The Infatuation",
-          href: "https://www.theinfatuation.com/new-york/deals/carbone-restaurant-week",
-          snippet: "Carbone is offering a special prix fixe during NYC Restaurant Week",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(true);
-    expect(result.platform).toBe("The Infatuation");
-    expect(result.url).toContain("theinfatuation.com");
-  });
-
-  it("The Infatuation: rejects result from wrong domain", () => {
-    const platform = makePlatform({
-      name: "The Infatuation",
-      domainFilter: "theinfatuation.com",
-    });
-
-    const result = evaluateSearchResults(platform, "Carbone", {
-      results: [
-        {
-          title: "Carbone Review - Eater",
-          href: "https://www.eater.com/reviews/carbone",
-          snippet: "Our review of Carbone",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(false);
-  });
-
-  // --- Eater ---
-  it("Eater: finds editorial deal coverage", () => {
-    const platform = makePlatform({
-      name: "Eater",
-      domainFilter: "eater.com",
-      rewardType: "deals",
-    });
-
-    const result = evaluateSearchResults(platform, "Shake Shack", {
-      results: [
-        {
-          title: "Shake Shack Deal Alert — 50% Off Burgers | Eater NY",
-          href: "https://www.eater.com/new-york/shake-shack-deal",
-          snippet: "Shake Shack is running a half-price burger promotion in NYC this week",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(true);
-    expect(result.platform).toBe("Eater");
-    expect(result.url).toContain("eater.com");
-  });
-
-  it("Eater: rejects result from wrong domain", () => {
-    const platform = makePlatform({
-      name: "Eater",
-      domainFilter: "eater.com",
-    });
-
-    const result = evaluateSearchResults(platform, "Shake Shack", {
-      results: [
-        {
-          title: "Shake Shack Menu Prices",
-          href: "https://www.grubhub.com/restaurant/shake-shack",
-          snippet: "Order Shake Shack on Grubhub",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(false);
-  });
+  // --- Eater and The Infatuation removed — they are review sites, not deal platforms ---
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1284,66 +1196,6 @@ describe("NYC location filter with new platforms", () => {
           title: "Nobu Restaurant Deal | LivingSocial",
           href: "https://www.livingsocial.com/deals/nobu-nyc",
           snippet: "Dine at Nobu in Tribeca, NYC — exclusive deals and discounts",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(true);
-  });
-
-  it("The Infatuation: rejects non-NYC location result", () => {
-    const platform = makePlatform({
-      name: "The Infatuation",
-      domainFilter: "theinfatuation.com",
-    });
-
-    const result = evaluateSearchResults(platform, "Carbone", {
-      results: [
-        {
-          title: "Carbone Las Vegas Deal | The Infatuation",
-          href: "https://www.theinfatuation.com/las-vegas/deals/carbone",
-          snippet: "Carbone brings its Italian magic to Las Vegas with a special tasting menu",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(false);
-  });
-
-  it("Eater: rejects non-NYC location result", () => {
-    const platform = makePlatform({
-      name: "Eater",
-      domainFilter: "eater.com",
-    });
-
-    const result = evaluateSearchResults(platform, "Shake Shack", {
-      results: [
-        {
-          title: "Shake Shack Austin Opening Deal | Eater",
-          href: "https://www.eater.com/austin/shake-shack-deal",
-          snippet: "Shake Shack opens in Austin, Texas with first-week specials",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(false);
-  });
-
-  it("Eater: allows result with Brooklyn indicator", () => {
-    const platform = makePlatform({
-      name: "Eater",
-      domainFilter: "eater.com",
-    });
-
-    const result = evaluateSearchResults(platform, "Shake Shack", {
-      results: [
-        {
-          title: "Shake Shack Williamsburg Deal | Eater NY",
-          href: "https://www.eater.com/new-york/shake-shack-williamsburg",
-          snippet: "Shake Shack in Williamsburg, Brooklyn launches a weekend brunch deal",
         },
       ],
       blocked: false,
