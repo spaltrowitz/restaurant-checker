@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
+import { ACTIVE_PLATFORMS } from "@/lib/platforms";
 
 export default function AboutPage() {
   return (
@@ -18,10 +19,10 @@ export default function AboutPage() {
             I built this because I was tired of checking 5 different apps before every dinner.
           </p>
           <p>
-            Living in NYC, there are over a dozen platforms that offer cashback, points, or discounts at restaurants — Upside, Nea, Blackbird, Bilt, Rakuten, inKind, and more. Each one has different restaurants, different reward types, and no way to compare them.
+            Living in NYC, there are a lot of platforms that offer cashback, points, or discounts at restaurants — Upside, Nea, Blackbird, Rakuten, inKind, and more. Each one has different restaurants, different reward types, and no way to compare them.
           </p>
           <p>
-            So I&apos;d open Upside, check if the restaurant was there. Then Bilt. Then Nea. Then Rakuten. Every single time. It was annoying.
+            So I&apos;d open Upside, check if the restaurant was there. Then Nea. Then Rakuten. Every single time. It was annoying.
           </p>
           <p className="text-[var(--color-text-primary)] font-medium">
             EatDiscounted checks all of them at once. Type a restaurant name, and in a few seconds you see every deal available — real cashback, discounts, and credit card rewards.
@@ -37,7 +38,7 @@ export default function AboutPage() {
             </div>
             <div>
               <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#ff6b35] to-[#e55a2b] text-white text-xs font-black flex items-center justify-center mb-2">2</div>
-              <p className="text-[var(--color-text-muted)]">We check 12+ programs</p>
+              <p className="text-[var(--color-text-muted)]">We check {ACTIVE_PLATFORMS.length} programs</p>
             </div>
             <div>
               <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#ff6b35] to-[#e55a2b] text-white text-xs font-black flex items-center justify-center mb-2">3</div>

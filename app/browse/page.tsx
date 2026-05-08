@@ -24,8 +24,6 @@ interface Borough {
 }
 
 const PLATFORM_DISPLAY: Record<string, { label: string; color: string; textColor: string; ringColor: string }> = {
-  "bilt": { label: "Bilt", color: "bg-blue-50", textColor: "text-blue-700", ringColor: "ring-blue-200" },
-  "rewards-network": { label: "Rewards Network", color: "bg-sky-50", textColor: "text-sky-700", ringColor: "ring-sky-200" },
   "upside": { label: "Upside", color: "bg-green-50", textColor: "text-green-700", ringColor: "ring-green-200" },
 };
 

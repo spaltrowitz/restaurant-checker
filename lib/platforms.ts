@@ -2,6 +2,7 @@ export interface Platform {
   name: string;
   url: string;
   appOnly: boolean;
+  enabled?: boolean;
   rewardType: "cashback" | "points" | "credit" | "discount" | "deals";
   rewardEmoji: string;
   rewardLabel: string;
@@ -112,6 +113,7 @@ export const PLATFORMS: Platform[] = [
     name: "Bilt Rewards",
     url: "https://www.biltrewards.com/dining",
     appOnly: false,
+    enabled: false,
     rewardType: "points",
     rewardEmoji: "⭐",
     rewardLabel: "Points (1-11x/$)",
@@ -162,6 +164,7 @@ export const PLATFORMS: Platform[] = [
     name: "Rewards Network",
     url: "https://aadvantagedining.com",
     appOnly: false,
+    enabled: false,
     rewardType: "points",
     rewardEmoji: "✈️",
     rewardLabel: "Miles/Points (8 programs)",
@@ -242,6 +245,8 @@ export const PLATFORMS: Platform[] = [
     valueCategory: "additional",
   },
 ];
+
+export const ACTIVE_PLATFORMS = PLATFORMS.filter((platform) => platform.enabled !== false);
 
 export const CARD_CONFLICT_GROUPS: string[][] = [];
 

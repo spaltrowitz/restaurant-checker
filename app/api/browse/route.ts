@@ -211,47 +211,6 @@ function loadAndIndex(): Map<string, RestaurantEntry> {
     }
   }
 
-  // Bilt
-  try {
-    const raw = JSON.parse(
-      fs.readFileSync(path.join(dataDir, "bilt-nyc-restaurants.json"), "utf-8")
-    ) as DumpFile;
-    for (const r of raw.restaurants) {
-      const rec = r as Record<string, unknown>;
-      const name = rec.name as string;
-      const zip = (rec.zip as string) || "";
-      const address = (rec.address as string) || "";
-      const rawData = rec.raw as Record<string, unknown> | undefined;
-      const multiplier = rawData?.multiplier as Record<string, number> | undefined;
-      const maxMul = multiplier ? Math.max(...Object.values(multiplier)) : null;
-      const deal = maxMul ? `${maxMul}x Bilt points per $1` : "Bilt points per $1";
-      addRestaurant(name, address, zip, "bilt", deal, "https://www.biltrewards.com/dining");
-    }
-  } catch { /* file missing */ }
-
-  // Rewards Network
-  try {
-    const raw = JSON.parse(
-      fs.readFileSync(path.join(dataDir, "rewards-network-nyc-restaurants.json"), "utf-8")
-    ) as DumpFile;
-    for (const r of raw.restaurants) {
-      const rec = r as Record<string, unknown>;
-      const rawData = rec.raw as Record<string, unknown> | undefined;
-      const name = (rec.name as string) || (rawData?.name as string) || "";
-      const location = rawData?.location as Record<string, unknown> | undefined;
-      const addr = location?.address as Record<string, string> | undefined;
-      const zip = addr?.zip || "";
-      const address1 = addr?.address1 || "";
-      const city = addr?.city || "";
-      const state = addr?.state || "";
-      const fullAddress = [address1, city, state, zip].filter(Boolean).join(", ");
-      const benefits = rawData?.benefits as Array<{ value: string }> | undefined;
-      const maxMiles = benefits ? Math.max(...benefits.map((b) => parseInt(b.value, 10) || 0)) : 0;
-      const deal = maxMiles > 0 ? `Up to ${maxMiles} miles per $1` : "Airline miles per $1";
-      addRestaurant(name, fullAddress, zip, "rewards-network", deal, "https://aadvantagedining.com");
-    }
-  } catch { /* file missing */ }
-
   // Upside
   try {
     const raw = JSON.parse(

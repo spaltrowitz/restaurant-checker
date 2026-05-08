@@ -1,5 +1,5 @@
 import { Nav } from "@/components/Nav";
-import { PLATFORMS } from "@/lib/platforms";
+import { ACTIVE_PLATFORMS } from "@/lib/platforms";
 
 export default function PlatformsPage() {
   return (
@@ -12,7 +12,7 @@ export default function PlatformsPage() {
           </h1>
           <div className="h-1 rounded-full bg-gradient-to-r from-[#ff6b35] via-[#ec4899] to-[#8b5cf6] animate-line-grow mt-4 mb-4"></div>
           <p className="text-sm text-[var(--color-text-secondary)]">
-            {PLATFORMS.length} platforms checked in seconds per search.
+            {ACTIVE_PLATFORMS.length} platforms checked in seconds per search.
           </p>
         </div>
 
@@ -26,7 +26,7 @@ export default function PlatformsPage() {
               </tr>
             </thead>
             <tbody>
-              {PLATFORMS.map((p) => (
+              {ACTIVE_PLATFORMS.map((p) => (
                 <tr key={p.name} className="border-b border-[var(--color-border-subtle)] last:border-0 hover:bg-[var(--color-surface-overlay)]/50 transition-colors">
                   <td className="px-4 py-3">
                     <a href={p.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
@@ -52,7 +52,7 @@ export default function PlatformsPage() {
         </div>
 
         <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-overlay)] p-5 text-xs text-[var(--color-text-muted)] space-y-2">
-          <p><strong className="text-[var(--color-text-secondary)]">Card-linked:</strong> Upside, Bilt, Rakuten, and Blackbird require linking a debit or credit card.</p>
+          <p><strong className="text-[var(--color-text-secondary)]">Card-linked:</strong> Upside, Rakuten, and Blackbird require linking a debit or credit card.</p>
           <p><strong className="text-[var(--color-text-secondary)]">Personalized:</strong> Upside, Blackbird, and Nea show different offers per user. We check if a restaurant is listed, not your specific discount.</p>
         </div>
       </main>

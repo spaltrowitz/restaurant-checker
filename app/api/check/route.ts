@@ -1,9 +1,7 @@
-import { PLATFORMS, detectCardConflicts, CheckResult } from "@/lib/platforms";
+import { ACTIVE_PLATFORMS, detectCardConflicts, CheckResult } from "@/lib/platforms";
 import {
   checkBlackbird,
   checkUpside,
-  checkBilt,
-  checkRewardsNetwork,
   batchSearch,
   evaluateSearchResults,
 } from "@/lib/checkers";
@@ -32,7 +30,7 @@ export async function GET(request: Request) {
       try {
         const foundPlatforms: string[] = [];
 
-        // Run Blackbird sitemap check, Upside API check, Bilt API check, Rewards Network API check, and batch web search in parallel
+        // Run direct checks plus batch web search in parallel
         // Each API checker has its own internal timeout; wrap with 10s race to prevent hangs
         const withTimeout = <T>(promise: Promise<T>, fallback: T): Promise<T> =>
           Promise.race([
@@ -46,18 +44,9 @@ export async function GET(request: Request) {
         const upsideFallback: CheckResult = {
           platform: "Upside", found: false, details: "Upside check timed out — try the app directly", method: "error" as const, url: "https://www.upside.com", matches: [], searchUnavailable: true,
         };
-        const biltFallback: CheckResult = {
-          platform: "Bilt Rewards", found: false, details: "Bilt check timed out — try the app directly", method: "error" as const, url: "https://www.biltrewards.com/dining", matches: [], searchUnavailable: true,
-        };
-        const rnFallback: CheckResult = {
-          platform: "Rewards Network", found: false, details: "Rewards Network check timed out", method: "error" as const, url: "https://aadvantagedining.com", matches: [], searchUnavailable: true,
-        };
-
-        const [blackbirdResult, upsideResult, biltResult, rewardsNetworkResult, searchResults] = await Promise.all([
+        const [blackbirdResult, upsideResult, searchResults] = await Promise.all([
           withTimeout(checkBlackbird(query), blackbirdFallback),
           withTimeout(checkUpside(query), upsideFallback),
-          withTimeout(checkBilt(query), biltFallback),
-          withTimeout(checkRewardsNetwork(query), rnFallback),
           batchSearch(query),
         ]);
 
@@ -73,24 +62,9 @@ export async function GET(request: Request) {
           encoder.encode(`data: ${JSON.stringify(upsideResult)}\n\n`)
         );
 
-        // Stream Bilt result
-        if (biltResult.found) foundPlatforms.push("Bilt Rewards");
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify(biltResult)}\n\n`)
-        );
-
-        // Stream Rewards Network result
-        if (rewardsNetworkResult.found)
-          foundPlatforms.push("Rewards Network");
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify(rewardsNetworkResult)}\n\n`
-          )
-        );
-
         // Stream remaining platform results
-        for (const platform of PLATFORMS) {
-          if (platform.name === "Blackbird" || platform.name === "Upside" || platform.name === "Bilt Rewards" || platform.name === "Rewards Network") continue;
+        for (const platform of ACTIVE_PLATFORMS) {
+          if (platform.name === "Blackbird" || platform.name === "Upside") continue;
 
           const search = searchResults.get(platform.name);
           const result = search

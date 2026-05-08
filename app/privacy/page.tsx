@@ -52,7 +52,7 @@ export default function PrivacyPage() {
             <p className="mb-2">We do not sell, rent, or trade any user information. When you search for a restaurant, your query (restaurant name only) is sent to:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li>Brave Search API</li>
-              <li>Upside, Bilt Rewards, Rewards Network, and Blackbird APIs</li>
+              <li>Upside and Blackbird APIs</li>
             </ul>
             <p className="mt-2">No personal identifiers are included in any API request.</p>
           </section>

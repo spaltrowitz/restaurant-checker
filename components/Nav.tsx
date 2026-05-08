@@ -11,11 +11,11 @@ export function Nav() {
 
   return (
     <nav className="sticky top-0 z-40 border-b border-[var(--color-border)]/60 nav-glass" aria-label="Main navigation">
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3.5">
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-3.5 sm:gap-6">
         <Link href="/" className="text-lg font-black text-[var(--color-text-primary)] hover:opacity-80 transition-opacity duration-300 tracking-tight">
           <span className="text-accent-gradient">Eat</span>Discounted
         </Link>
-        <div className="flex gap-5 text-sm">
+        <div className="ml-2 flex gap-4 text-sm sm:ml-4 sm:gap-5">
           <Link
             href="/"
             className={`transition-colors duration-200 ${pathname === "/" ? "text-[var(--color-gold)] font-semibold" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"}`}

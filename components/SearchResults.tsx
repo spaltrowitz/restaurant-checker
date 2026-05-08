@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
-import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
+import { ACTIVE_PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
 import { findBestDeal } from "@/lib/best-deal";
 import { ResultCard } from "./ResultCard";
 import { BestDealCard } from "./BestDealCard";
@@ -189,12 +189,13 @@ function SearchResultsInner() {
   const unavailableCount = resultsArr.filter(
     (r) =>
       r.searchUnavailable &&
+      !ACTIVE_PLATFORMS.find((platform) => platform.name === r.platform)?.appOnly &&
       !(communityReports.get(r.platform)?.count ?? 0 >= 2)
   ).length;
   const checkedCount = results.size;
 
   // Filter platforms based on active filters
-  const filterPlatform = (p: typeof PLATFORMS[number]) => {
+  const filterPlatform = (p: typeof ACTIVE_PLATFORMS[number]) => {
     if (filters.cardFreeOnly && p.cardLink) return false;
     if (filters.rewardType !== "all") {
       const typeMap: Record<string, string[]> = {
@@ -213,22 +214,22 @@ function SearchResultsInner() {
     return true;
   };
 
-  const filteredPlatforms = PLATFORMS.filter(filterPlatform);
+  const filteredPlatforms = ACTIVE_PLATFORMS.filter(filterPlatform);
 
   // --- Three-tier grouping ---
-  const isFound = (p: typeof PLATFORMS[number]) => {
+  const isFound = (p: typeof ACTIVE_PLATFORMS[number]) => {
     const r = results.get(p.name);
     const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
     return r?.found || communityConfirmed;
   };
 
-  const isManualCheck = (p: typeof PLATFORMS[number]) => {
+  const isManualCheck = (p: typeof ACTIVE_PLATFORMS[number]) => {
     const r = results.get(p.name);
     const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
-    return r?.searchUnavailable && !communityConfirmed;
+    return r?.searchUnavailable && !communityConfirmed && !p.appOnly;
   };
 
-  const isNotFound = (p: typeof PLATFORMS[number]) => {
+  const isNotFound = (p: typeof ACTIVE_PLATFORMS[number]) => {
     const r = results.get(p.name);
     const communityConfirmed = (communityReports.get(p.name)?.count ?? 0) >= 2;
     return r && !r.found && !r.searchUnavailable && !communityConfirmed;
@@ -241,7 +242,7 @@ function SearchResultsInner() {
   const notFoundPlatforms = isDone ? filteredPlatforms.filter((p) => isNotFound(p)) : [];
 
   // Sort within groups: API method first, then by name
-  const sortWithinTier = (platforms: typeof PLATFORMS) => {
+  const sortWithinTier = (platforms: typeof ACTIVE_PLATFORMS) => {
     if (filters.sortBy === "name") return [...platforms].sort((a, b) => a.name.localeCompare(b.name));
     return [...platforms].sort((a, b) => {
       const aResult = results.get(a.name);
@@ -259,9 +260,11 @@ function SearchResultsInner() {
   // During streaming: flat list sorted by tier awareness
   const streamingPlatforms = !isDone
     ? [...filteredPlatforms].sort((a, b) => {
-        if (filters.sortBy === "name") return a.name.localeCompare(b.name);
         const aResult = results.get(a.name);
         const bResult = results.get(b.name);
+        if (a.appOnly && aResult?.searchUnavailable) return 1;
+        if (b.appOnly && bResult?.searchUnavailable) return -1;
+        if (filters.sortBy === "name") return a.name.localeCompare(b.name);
         const aFound = aResult?.found || (communityReports.get(a.name)?.count ?? 0) >= 2;
         const bFound = bResult?.found || (communityReports.get(b.name)?.count ?? 0) >= 2;
         // Primary found first
@@ -338,7 +341,7 @@ function SearchResultsInner() {
   );
 
   // Render a result card for a platform
-  const renderCard = (p: typeof PLATFORMS[number], i: number, showConflict = false) => (
+  const renderCard = (p: typeof ACTIVE_PLATFORMS[number], i: number, showConflict = false) => (
     <div key={p.name} className={`animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}>
       <ResultCard
         platformName={p.name}
@@ -368,13 +371,13 @@ function SearchResultsInner() {
       {!error && isSearching && (
         <div className="mb-6 flex items-center gap-3 animate-fade-in">
           <div className="h-1.5 flex-1 rounded-full bg-[var(--color-surface-overlay)] overflow-hidden">
-            <div
+              <div
               className="h-full rounded-full bg-gradient-to-r from-[var(--color-gold)] to-[var(--color-gold-dim)] transition-all duration-500 ease-out"
-              style={{ width: `${Math.max(10, (checkedCount / PLATFORMS.length) * 100)}%` }}
+              style={{ width: `${Math.max(10, (checkedCount / ACTIVE_PLATFORMS.length) * 100)}%` }}
             />
           </div>
           <p className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
-            {checkedCount}/{PLATFORMS.length}
+            {checkedCount}/{ACTIVE_PLATFORMS.length}
           </p>
         </div>
       )}
@@ -399,7 +402,9 @@ function SearchResultsInner() {
       {/* During streaming: flat list */}
       {!error && !isDone && (
         <div className="grid gap-3">
-          {streamingPlatforms.map((p, i) => renderCard(p, i, true))}
+          {streamingPlatforms
+            .filter((p) => !(p.appOnly && results.get(p.name)?.searchUnavailable))
+            .map((p, i) => renderCard(p, i, true))}
         </div>
       )}
 
