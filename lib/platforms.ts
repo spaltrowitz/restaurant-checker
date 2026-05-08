@@ -12,8 +12,8 @@ export interface Platform {
   searchQuery: string;
   domainFilter: string;
   skipSiteOperator?: boolean;
-  /** Data confidence tier: 1 = API-verified with earning rates, 2 = web search / unverified */
   tier: 1 | 2;
+  valueCategory: "primary" | "additional";
 }
 
 export interface CheckResult {
@@ -54,6 +54,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "",
     domainFilter: "",
     tier: 1,
+    valueCategory: "additional",
   },
   {
     name: "inKind",
@@ -71,6 +72,7 @@ export const PLATFORMS: Platform[] = [
     domainFilter: "inkind.com",
     skipSiteOperator: true,
     tier: 2,
+    valueCategory: "primary",
   },
   {
     name: "Upside",
@@ -87,6 +89,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "",
     domainFilter: "upside.com",
     tier: 1,
+    valueCategory: "primary",
   },
   {
     name: "Nea",
@@ -103,6 +106,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "",
     domainFilter: "neaapp.ai",
     tier: 2,
+    valueCategory: "primary",
   },
   {
     name: "Bilt Rewards",
@@ -119,6 +123,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "dining",
     domainFilter: "biltrewards.com",
     tier: 1,
+    valueCategory: "additional",
   },
   {
     name: "Rakuten Dining",
@@ -135,6 +140,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "dining",
     domainFilter: "rakuten.com/dining",
     tier: 2,
+    valueCategory: "additional",
   },
   {
     name: "Too Good To Go",
@@ -150,6 +156,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "",
     domainFilter: "toogoodtogo.com",
     tier: 2,
+    valueCategory: "primary",
   },
   {
     name: "Rewards Network",
@@ -166,6 +173,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "",
     domainFilter: "",
     tier: 1,
+    valueCategory: "additional",
   },
   {
     name: "Pulsd",
@@ -182,6 +190,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "restaurant dining deal NYC",
     domainFilter: "pulsd.com",
     tier: 2,
+    valueCategory: "primary",
   },
   {
     name: "Restaurant.com",
@@ -198,6 +207,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "restaurant dining certificate NYC",
     domainFilter: "restaurant.com",
     tier: 2,
+    valueCategory: "primary",
   },
   {
     name: "Groupon",
@@ -213,6 +223,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "restaurant deal NYC",
     domainFilter: "groupon.com",
     tier: 2,
+    valueCategory: "primary",
   },
   {
     name: "LivingSocial",
@@ -228,6 +239,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "restaurant deal",
     domainFilter: "livingsocial.com",
     tier: 2,
+    valueCategory: "primary",
   },
 ];
 

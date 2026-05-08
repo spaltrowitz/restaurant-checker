@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
-import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType, getPlatform } from "@/lib/platforms";
+import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
 import { findBestDeal } from "@/lib/best-deal";
 import { ResultCard } from "./ResultCard";
 import { BestDealCard } from "./BestDealCard";
@@ -37,7 +37,6 @@ function SearchResultsInner() {
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useFilterState();
-  const [tier2Expanded, setTier2Expanded] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -133,7 +132,6 @@ function SearchResultsInner() {
     setIsSearching(true);
     setIsDone(false);
     setError(null);
-    setTier2Expanded(false);
 
     fetchCommunityReports(q);
     performFetch(q, controller);
@@ -150,7 +148,6 @@ function SearchResultsInner() {
       setIsSearching(true);
       setIsDone(false);
       setError(null);
-      setTier2Expanded(false);
     } else {
       setResults(new Map());
       setCommunityReports(new Map());
@@ -237,14 +234,13 @@ function SearchResultsInner() {
     return r && !r.found && !r.searchUnavailable && !communityConfirmed;
   };
 
-  // During streaming, show all cards as they arrive (no tier grouping yet)
-  // After streaming, organize into tiers
-  const tier1Found = filteredPlatforms.filter((p) => p.tier === 1 && isFound(p));
-  const tier2Found = filteredPlatforms.filter((p) => p.tier === 2 && isFound(p));
+  // Group found results by value category
+  const primaryFound = filteredPlatforms.filter((p) => (p.valueCategory as string) === "primary" && isFound(p));
+  const additionalFound = filteredPlatforms.filter((p) => (p.valueCategory as string) === "additional" && isFound(p));
   const manualCheckPlatforms = filteredPlatforms.filter((p) => isManualCheck(p));
   const notFoundPlatforms = isDone ? filteredPlatforms.filter((p) => isNotFound(p)) : [];
 
-  // Sort within tiers: API method first, then by name
+  // Sort within groups: API method first, then by name
   const sortWithinTier = (platforms: typeof PLATFORMS) => {
     if (filters.sortBy === "name") return [...platforms].sort((a, b) => a.name.localeCompare(b.name));
     return [...platforms].sort((a, b) => {
@@ -256,8 +252,8 @@ function SearchResultsInner() {
     });
   };
 
-  const sortedTier1 = sortWithinTier(tier1Found);
-  const sortedTier2 = sortWithinTier(tier2Found);
+  const sortedPrimary = sortWithinTier(primaryFound);
+  const sortedAdditional = sortWithinTier(additionalFound);
   const sortedManual = sortWithinTier(manualCheckPlatforms);
 
   // During streaming: flat list sorted by tier awareness
@@ -268,13 +264,14 @@ function SearchResultsInner() {
         const bResult = results.get(b.name);
         const aFound = aResult?.found || (communityReports.get(a.name)?.count ?? 0) >= 2;
         const bFound = bResult?.found || (communityReports.get(b.name)?.count ?? 0) >= 2;
-        const aApi = aFound && aResult?.method === "api";
-        const bApi = bFound && bResult?.method === "api";
-        if (aApi && !bApi) return -1;
-        if (!aApi && bApi) return 1;
+        // Primary found first
+        if (aFound && (a.valueCategory as string) === "primary" && !(bFound && (b.valueCategory as string) === "primary")) return -1;
+        if (bFound && (b.valueCategory as string) === "primary" && !(aFound && (a.valueCategory as string) === "primary")) return 1;
         if (aFound && !bFound) return -1;
         if (!aFound && bFound) return 1;
-        return (a.tier - b.tier);
+        if ((a.valueCategory as string) === "primary" && (b.valueCategory as string) === "additional") return -1;
+        if ((a.valueCategory as string) === "additional" && (b.valueCategory as string) === "primary") return 1;
+        return 0;
       })
     : [];
 
@@ -310,7 +307,7 @@ function SearchResultsInner() {
           </div>
           <p className="text-sm text-[var(--color-text-secondary)]">
             Available at:{" "}
-            {[...sortedTier1, ...sortedTier2, ...sortedManual]
+            {[...sortedPrimary, ...sortedAdditional, ...sortedManual]
               .filter((p) => isFound(p))
               .map((p) => p.name)
               .join(", ")}
@@ -406,27 +403,24 @@ function SearchResultsInner() {
         </div>
       )}
 
-      {/* After streaming: tiered sections */}
+      {/* After streaming: grouped sections */}
       {!error && isDone && (
         <div className="space-y-6">
-          {/* Tier 1: Verified API Results */}
-          {sortedTier1.length > 0 && (
+          {/* Primary: Real cashback & discounts */}
+          {sortedPrimary.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
-                  Verified Platforms
-                </span>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  — Real-time API data
+                <span className="text-xs font-semibold uppercase tracking-wider text-green-600">
+                  Deals &amp; Cashback
                 </span>
               </div>
               <div className="grid gap-3">
-                {sortedTier1.map((p, i) => renderCard(p, i, true))}
+                {sortedPrimary.map((p, i) => renderCard(p, i, true))}
               </div>
             </section>
           )}
 
-          {/* Manual check platforms (mixed in with found) */}
+          {/* Manual check platforms */}
           {sortedManual.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
@@ -440,49 +434,20 @@ function SearchResultsInner() {
             </section>
           )}
 
-          {/* Tier 2: Web Search Results — collapsible */}
-          {sortedTier2.length > 0 && (
+          {/* Additional: Card-specific points programs */}
+          {sortedAdditional.length > 0 && (
             <section>
-              <button
-                onClick={() => setTier2Expanded(!tier2Expanded)}
-                className="flex items-center gap-2 mb-3 group cursor-pointer"
-                aria-expanded={tier2Expanded}
-              >
-                <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
-                  Found via Web Search
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
+                  Card-Specific Rewards
                 </span>
                 <span className="text-xs text-[var(--color-text-muted)]">
-                  — {sortedTier2.length} platform{sortedTier2.length !== 1 ? "s" : ""}
+                  — Requires linked card
                 </span>
-                <span className={`text-xs text-[var(--color-text-muted)] transition-transform duration-200 ${tier2Expanded ? "rotate-180" : ""}`}>
-                  ▼
-                </span>
-              </button>
-              {!tier2Expanded ? (
-                <div className="flex flex-wrap gap-2 animate-fade-in">
-                  {sortedTier2.map((p) => {
-                    const platform = getPlatform(p.name);
-                    return (
-                      <span
-                        key={p.name}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface-overlay)] px-3 py-1.5 text-xs font-medium text-blue-300 ring-1 ring-blue-500/20"
-                      >
-                        {p.name}
-                      </span>
-                    );
-                  })}
-                  <button
-                    onClick={() => setTier2Expanded(true)}
-                    className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 ring-1 ring-blue-500/20 hover:bg-blue-500/20 transition-colors"
-                  >
-                    Show details →
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-3 animate-fade-in">
-                  {sortedTier2.map((p, i) => renderCard(p, i, true))}
-                </div>
-              )}
+              </div>
+              <div className="grid gap-3">
+                {sortedAdditional.map((p, i) => renderCard(p, i, true))}
+              </div>
             </section>
           )}
         </div>
