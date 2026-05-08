@@ -26,7 +26,7 @@ function SearchBarInner() {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search any NYC restaurant…"
+        placeholder="Try Carbone, Lilia, Thai Diner…"
         aria-label="Search for a restaurant"
         className="flex-1 rounded-2xl border-2 border-[var(--color-border)] bg-white px-6 py-4 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all duration-300 shadow-sm hover:border-orange-200 hover:shadow-md"
         autoFocus

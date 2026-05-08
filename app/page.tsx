@@ -7,19 +7,19 @@ export default function Home() {
   return (
     <>
       <Nav />
-      <main id="main-content" className="mx-auto w-full max-w-2xl flex-1 px-4 py-20 sm:py-28">
-        <div className="text-center mb-16 hero-gradient pt-6 pb-10 relative">
-          <div className="mb-6 animate-title-reveal">
-            <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-[var(--color-text-primary)] mb-4 leading-[0.95]">
+      <main id="main-content" className="mx-auto w-full max-w-2xl flex-1 px-4 py-14 sm:py-20">
+        <div className="text-center mb-10 hero-gradient pt-6 pb-6 relative">
+          <div className="mb-4 animate-title-reveal">
+            <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-[var(--color-text-primary)] mb-3 leading-[0.95]">
               <span className="text-accent-gradient">Eat</span>Discounted
             </h1>
-            <div className="h-1 rounded-full bg-gradient-to-r from-[#ff6b35] via-[#ec4899] to-[#8b5cf6] mx-auto animate-line-grow mb-6"></div>
+            <div className="h-1 rounded-full bg-gradient-to-r from-[#ff6b35] via-[#ec4899] to-[#8b5cf6] mx-auto animate-line-grow mb-4"></div>
           </div>
-          <p className="text-lg sm:text-2xl font-medium text-[var(--color-text-secondary)] max-w-lg mx-auto leading-relaxed mb-5 animate-badge-pop">
-            Search <span className="text-[var(--color-text-primary)] font-bold">12+ programs</span> for deals at any NYC restaurant
+          <p className="text-lg sm:text-xl font-medium text-[var(--color-text-secondary)] max-w-md mx-auto leading-relaxed animate-badge-pop">
+            Every cashback, discount &amp; reward program for NYC restaurants — one search
           </p>
         </div>
-        <div className="mt-8">
+        <div className="mt-6">
           <SearchBar />
         </div>
         <SearchResults />
