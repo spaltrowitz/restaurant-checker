@@ -66,3 +66,5 @@ next-env.d.ts
 bilt-chunks/
 bilt-dining.html
 bilt-chunks.txt
+eatdiscounted.db-shm
+eatdiscounted.db-wal

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchResults } from "@/components/SearchResults";
-import { PopularSearches } from "@/components/PopularSearches";
 
 export default function Home() {
   return (
@@ -35,7 +34,6 @@ export default function Home() {
           <SearchBar />
         </div>
         <SearchResults />
-        <PopularSearches />
       </main>
       <footer className="border-t border-[var(--color-border)]/60 footer-gradient">
         <div className="mx-auto max-w-2xl px-4 py-10">
