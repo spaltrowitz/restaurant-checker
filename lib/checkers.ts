@@ -470,10 +470,10 @@ async function getBiltRestaurants(): Promise<BiltRestaurant[]> {
   let page = 0;
   let hasMore = true;
 
-  while (hasMore && page < 30) {
-    const resp = await fetch(`${BILT_API_URL}?page=${page}&size=100`, {
+  while (hasMore && page < 10) {
+    const resp = await fetch(`${BILT_API_URL}?page=${page}&size=500`, {
       headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!resp.ok) throw new Error(`Bilt API HTTP ${resp.status}`);
     const data = await resp.json();
@@ -505,7 +505,7 @@ export async function checkBilt(name: string): Promise<CheckResult> {
         const cuisine = r.primary_cuisine?.name
           ? ` (${r.primary_cuisine.name})`
           : "";
-        const exclusive = r.exclusive ? " ⭐ Exclusive" : "";
+        const exclusive = r.exclusive ? " Exclusive" : "";
         return {
           platform: "Bilt Rewards",
           found: true,
