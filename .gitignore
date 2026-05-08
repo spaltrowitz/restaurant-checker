@@ -1,7 +1,70 @@
-*.pyc
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# python
 __pycache__/
+*.pyc
 .venv/
-.env
-*.egg-info/
-dist/
-build/
+sightings.db
+
+# app database
+eatdiscounted.db
+
+# pre-fetch cache (generated data)
+data/search-cache.json
+data/bilt-nyc-restaurants.json
+data/upside-nyc-restaurants.json
+data/rewards-network-nyc-restaurants.json
+data/blackbird-spots.json
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+# Squad: ignore runtime state (logs, inbox, sessions)
+.squad/orchestration-log/
+.squad/log/
+.squad/decisions/inbox/
+.squad/sessions/
+.squad/.scratch/
+# Squad: SubSquad activation file (local to this machine)
+.squad-workstream
+bilt-chunks/
+bilt-dining.html
+bilt-chunks.txt
+eatdiscounted.db-shm
+eatdiscounted.db-wal

@@ -1,0 +1,87 @@
+TERMS OF SERVICE
+EatDiscounted
+Last Updated: May 7, 2026
+
+1. ACCEPTANCE OF TERMS
+By accessing or using the EatDiscounted web application ("EatDiscounted," "we," "us," or "our"), you agree to these Terms of Service. If you do not agree, please do not use the application.
+
+2. SERVICE DESCRIPTION
+EatDiscounted is a free restaurant discount discovery tool for New York City. It searches multiple platforms to find available deals, cashback offers, and loyalty program matches for restaurants you search. Features include:
+• Searching restaurants across 10+ discount and loyalty platforms
+• Viewing cashback percentages, deals, and program details
+• Community-reported platform confirmations
+• Saving favorite restaurants
+• Browsing restaurants by neighborhood
+
+3. NO ACCOUNT REQUIRED
+• EatDiscounted does not require any account, registration, or personal information to use.
+• Your identity is represented by a hashed, non-reversible device identifier used only for community reports and favorites.
+
+4. ACCURACY OF INFORMATION
+• Restaurant availability on discount platforms is determined through automated searches and may not be current or accurate.
+• Deal percentages, cashback rates, and offer details are sourced from third-party platforms (Upside, Bilt, Rewards Network, Blackbird, and others) and may change without notice.
+• Community reports are user-submitted and unverified — we do not guarantee their accuracy.
+• Always verify deal availability directly on the respective platform before visiting a restaurant.
+• We are not responsible for expired deals, incorrect cashback amounts, or restaurants that are no longer participating in a program.
+
+5. COMMUNITY REPORTS
+• You may submit community reports confirming a restaurant's presence on a specific platform.
+• Reports are associated with a hashed device identifier — not your name or personal information.
+• By submitting a report, you represent that the information is accurate to the best of your knowledge.
+• We reserve the right to remove reports that appear fraudulent, spammy, or inaccurate.
+• Reports are limited to prevent abuse (10 reports per 60 seconds per device).
+
+6. THIRD-PARTY PLATFORMS
+• EatDiscounted searches and references third-party discount and loyalty platforms. We are not affiliated with, endorsed by, or partnered with any of these platforms, including:
+  - Upside
+  - Bilt Rewards
+  - Rewards Network / AAdvantage Dining
+  - Blackbird
+  - inKind
+  - Too Good To Go
+  - Restaurant.com
+  - Groupon
+  - Rakuten Dining
+  - Seated
+  - Nea
+• Using deals from these platforms is subject to their respective terms and conditions.
+• We do not process payments, redeem offers, or facilitate transactions with any platform.
+
+7. ACCEPTABLE USE
+You agree not to:
+• Submit false or misleading community reports
+• Scrape, crawl, or automated-harvest data from the application
+• Attempt to circumvent rate limiting or abuse API endpoints
+• Use the service for any commercial purpose (e.g., competitive analysis) without written consent
+• Use the service for any unlawful purpose
+
+8. INTELLECTUAL PROPERTY
+The EatDiscounted application, including its design, code, search algorithms, and curated restaurant data, is owned by us. Third-party platform names and logos belong to their respective owners.
+
+9. LIMITATION OF LIABILITY
+EATDISCOUNTED IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, WE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SERVICE, INCLUDING BUT NOT LIMITED TO:
+• Inaccurate or outdated deal information
+• Expired offers or cashback rates that have changed
+• Restaurants no longer participating in referenced programs
+• False or misleading community reports
+• Service interruptions or downtime
+• Actions taken based on information provided by the application
+
+10. NO FINANCIAL ADVICE
+EatDiscounted provides information about restaurant discount programs for convenience only. It does not constitute financial advice. You are responsible for evaluating whether any deal or loyalty program is suitable for your needs.
+
+11. GEOGRAPHIC SCOPE
+EatDiscounted currently covers restaurants in New York City. Coverage in other areas may be limited or unavailable.
+
+12. TERMINATION
+We reserve the right to restrict access to the service at any time for violation of these Terms, including submitting false reports or abusing rate limits.
+
+13. CHANGES TO TERMS
+We may update these Terms of Service from time to time. Changes will be posted on this page with an updated "Last Updated" date. Your continued use of the service after changes constitutes acceptance of the modified terms.
+
+14. GOVERNING LAW
+These Terms shall be governed by the laws of the State of New York, without regard to conflict of law provisions.
+
+15. CONTACT US
+For questions about these Terms of Service, contact:
+Email: sharipaltrowitz@gmail.com

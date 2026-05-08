@@ -1,0 +1,11 @@
+node_modules
+.next
+.env.local
+.env*.local
+.git
+.squad
+.gitignore
+README.md
+*.md
+.venv
+__pycache__
