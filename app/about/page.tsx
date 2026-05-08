@@ -19,7 +19,7 @@ export default function AboutPage() {
             I built this because I was tired of checking 5 different apps before every dinner.
           </p>
           <p>
-            Living in NYC, there are a lot of platforms that offer cashback, points, or discounts at restaurants — Upside, Nea, Blackbird, Rakuten, inKind, and more. Each one has different restaurants, different reward types, and no way to compare them.
+            Living in NYC, there are a lot of cashback apps, loyalty programs, and discount platforms for restaurants. Each one has different restaurants, different reward types, and no way to compare them.
           </p>
           <p>
             So I&apos;d open Upside, check if the restaurant was there. Then Nea. Then Rakuten. Every single time. It was annoying.
