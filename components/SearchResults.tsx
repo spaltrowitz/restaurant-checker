@@ -439,10 +439,10 @@ function SearchResultsInner() {
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
-                  Card-Specific Rewards
+                  Credit Card Rewards
                 </span>
                 <span className="text-xs text-[var(--color-text-muted)]">
-                  — Requires linked card
+                  — Points on your existing card
                 </span>
               </div>
               <div className="grid gap-3">
