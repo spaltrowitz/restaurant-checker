@@ -319,14 +319,14 @@ describe("batchSearch()", () => {
     // Clear cache to ensure fresh search
     await batchSearch(restaurantName);
 
-    // Check that fetch was called with site: operator for platforms with domainFilter (not inKind which uses skipSiteOperator)
+    // Check that fetch was called with site: operator for active platforms with domainFilter
     const fetchCalls = vi.mocked(fetch).mock.calls;
-    const rakutenCall = fetchCalls.find((call) => {
+    const restaurantComCall = fetchCalls.find((call) => {
       const url = call[0] as string;
-      return url.includes(restaurantName) && url.includes("site%3Arakuten.com");
+      return url.includes(restaurantName) && url.includes("site%3Arestaurant.com");
     });
 
-    expect(rakutenCall).toBeDefined();
+    expect(restaurantComCall).toBeDefined();
   });
 
   it("skips site: operator for platforms with skipSiteOperator", async () => {
