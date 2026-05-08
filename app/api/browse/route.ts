@@ -143,10 +143,23 @@ const ZIP_TO_NEIGHBORHOOD: Record<string, string> = {
   "11692": "Rockaway",
 };
 
+// Borough classification from zip prefix
+function boroughFromZip(zip: string): string {
+  const z = parseInt(zip, 10);
+  if (z >= 10001 && z <= 10282) return "Manhattan";
+  if (z >= 10301 && z <= 10314) return "Staten Island";
+  if (z >= 10451 && z <= 10475) return "Bronx";
+  if (z >= 11001 && z <= 11109) return "Queens";
+  if (z >= 11201 && z <= 11256) return "Brooklyn";
+  if (z >= 11351 && z <= 11697) return "Queens";
+  return "Manhattan"; // fallback
+}
+
 interface RestaurantEntry {
   name: string;
   address: string;
   neighborhood: string;
+  borough: string;
   platforms: Record<string, { deal: string; url: string }>;
 }
 
@@ -176,6 +189,28 @@ function loadAndIndex(): Map<string, RestaurantEntry> {
   const dataDir = path.resolve(process.cwd(), "data");
   const index = new Map<string, RestaurantEntry>();
 
+  function addRestaurant(name: string, address: string, zip: string, platformKey: string, deal: string, url: string) {
+    if (!name) return;
+    const hood = neighborhoodFromZip(zip) || neighborhoodFromZip(extractZip(address) || "");
+    if (!hood) return;
+    const borough = boroughFromZip(zip || extractZip(address) || "");
+    // Dedup key: normalized name + neighborhood to avoid cross-neighborhood duplicates
+    const key = `${slugify(name)}::${slugify(hood)}`;
+    const existing = index.get(key);
+    if (existing) {
+      existing.platforms[platformKey] = { deal, url };
+      if (!existing.address && address) existing.address = address;
+    } else {
+      index.set(key, {
+        name,
+        address,
+        neighborhood: hood,
+        borough,
+        platforms: { [platformKey]: { deal, url } },
+      });
+    }
+  }
+
   // Bilt
   try {
     const raw = JSON.parse(
@@ -184,162 +219,62 @@ function loadAndIndex(): Map<string, RestaurantEntry> {
     for (const r of raw.restaurants) {
       const rec = r as Record<string, unknown>;
       const name = rec.name as string;
-      if (!name) continue;
       const zip = (rec.zip as string) || "";
       const address = (rec.address as string) || "";
-      const hood = neighborhoodFromZip(zip) || neighborhoodFromZip(extractZip(address) || "");
-      if (!hood) continue;
-
       const rawData = rec.raw as Record<string, unknown> | undefined;
       const multiplier = rawData?.multiplier as Record<string, number> | undefined;
-      const maxMul = multiplier
-        ? Math.max(...Object.values(multiplier))
-        : null;
+      const maxMul = multiplier ? Math.max(...Object.values(multiplier)) : null;
       const deal = maxMul ? `${maxMul}x Bilt points per $1` : "Bilt points per $1";
-
-      const key = slugify(name);
-      const existing = index.get(key);
-      if (existing) {
-        existing.platforms["bilt"] = {
-          deal,
-          url: "https://www.biltrewards.com/dining",
-        };
-      } else {
-        index.set(key, {
-          name,
-          address,
-          neighborhood: hood,
-          platforms: {
-            bilt: {
-              deal,
-              url: "https://www.biltrewards.com/dining",
-            },
-          },
-        });
-      }
+      addRestaurant(name, address, zip, "bilt", deal, "https://www.biltrewards.com/dining");
     }
-  } catch {
-    // file missing — skip
-  }
+  } catch { /* file missing */ }
 
   // Rewards Network
   try {
     const raw = JSON.parse(
-      fs.readFileSync(
-        path.join(dataDir, "rewards-network-nyc-restaurants.json"),
-        "utf-8"
-      )
+      fs.readFileSync(path.join(dataDir, "rewards-network-nyc-restaurants.json"), "utf-8")
     ) as DumpFile;
     for (const r of raw.restaurants) {
       const rec = r as Record<string, unknown>;
       const rawData = rec.raw as Record<string, unknown> | undefined;
       const name = (rec.name as string) || (rawData?.name as string) || "";
-      if (!name) continue;
-
       const location = rawData?.location as Record<string, unknown> | undefined;
       const addr = location?.address as Record<string, string> | undefined;
       const zip = addr?.zip || "";
       const address1 = addr?.address1 || "";
       const city = addr?.city || "";
       const state = addr?.state || "";
-      const fullAddress = [address1, city, state, zip]
-        .filter(Boolean)
-        .join(", ");
-      const hood = neighborhoodFromZip(zip);
-      if (!hood) continue;
-
+      const fullAddress = [address1, city, state, zip].filter(Boolean).join(", ");
       const benefits = rawData?.benefits as Array<{ value: string }> | undefined;
-      const maxMiles = benefits
-        ? Math.max(...benefits.map((b) => parseInt(b.value, 10) || 0))
-        : 0;
+      const maxMiles = benefits ? Math.max(...benefits.map((b) => parseInt(b.value, 10) || 0)) : 0;
       const deal = maxMiles > 0 ? `Up to ${maxMiles} miles per $1` : "Airline miles per $1";
-
-      const key = slugify(name);
-      const existing = index.get(key);
-      if (existing) {
-        existing.platforms["rewards-network"] = {
-          deal,
-          url: "https://aadvantagedining.com",
-        };
-        if (!existing.address && fullAddress) existing.address = fullAddress;
-      } else {
-        index.set(key, {
-          name,
-          address: fullAddress,
-          neighborhood: hood,
-          platforms: {
-            "rewards-network": {
-              deal,
-              url: "https://aadvantagedining.com",
-            },
-          },
-        });
-      }
+      addRestaurant(name, fullAddress, zip, "rewards-network", deal, "https://aadvantagedining.com");
     }
-  } catch {
-    // file missing — skip
-  }
+  } catch { /* file missing */ }
 
   // Upside
   try {
     const raw = JSON.parse(
-      fs.readFileSync(
-        path.join(dataDir, "upside-nyc-restaurants.json"),
-        "utf-8"
-      )
+      fs.readFileSync(path.join(dataDir, "upside-nyc-restaurants.json"), "utf-8")
     ) as DumpFile;
     for (const r of raw.restaurants) {
       const rec = r as Record<string, unknown>;
       const rawData = rec.raw as Record<string, unknown> | undefined;
       const siteLocation = rawData?.siteLocation as Record<string, unknown> | undefined;
-      const name =
-        (rec.name as string) || (rawData?.text as string) || "";
-      if (!name) continue;
-
+      const name = (rec.name as string) || (rawData?.text as string) || "";
       const zip = (siteLocation?.postCode as string) || "";
       const address1 = (siteLocation?.address1 as string) || "";
       const locality = (siteLocation?.locality as string) || "";
       const region = (siteLocation?.region as string) || "";
-      const fullAddress = [address1, locality, region, zip]
-        .filter(Boolean)
-        .join(", ");
-      const hood = neighborhoodFromZip(zip);
-      if (!hood) continue;
-
-      const discounts = rawData?.discounts as Array<{
-        percentOff: number;
-        detailText: string;
-      }> | undefined;
+      const fullAddress = [address1, locality, region, zip].filter(Boolean).join(", ");
+      const discounts = rawData?.discounts as Array<{ percentOff: number; detailText: string }> | undefined;
       const topDiscount = discounts?.[0];
       const deal = topDiscount
         ? topDiscount.detailText || `${Math.round(topDiscount.percentOff * 100)}% cash back`
         : "Cash back";
-
-      const key = slugify(name);
-      const existing = index.get(key);
-      if (existing) {
-        existing.platforms["upside"] = {
-          deal,
-          url: "https://www.upside.com/find-offers",
-        };
-        if (!existing.address && fullAddress) existing.address = fullAddress;
-      } else {
-        index.set(key, {
-          name,
-          address: fullAddress,
-          neighborhood: hood,
-          platforms: {
-            upside: {
-              deal,
-              url: "https://www.upside.com/find-offers",
-            },
-          },
-        });
-      }
+      addRestaurant(name, fullAddress, zip, "upside", deal, "https://www.upside.com/find-offers");
     }
-  } catch {
-    // file missing — skip
-  }
+  } catch { /* file missing */ }
 
   return index;
 }
@@ -423,20 +358,29 @@ export async function GET(request: NextRequest) {
     return Response.json(detail);
   }
 
-  // Return all neighborhoods sorted by restaurant count
-  const neighborhoods: NeighborhoodSummary[] = [];
+  // Return neighborhoods grouped by borough
+  const boroughMap = new Map<string, { name: string; slug: string; restaurantCount: number }[]>();
   for (const [name, restaurants] of byNeighborhood.entries()) {
-    neighborhoods.push({
-      slug: slugify(name),
-      name,
-      restaurantCount: restaurants.length,
-    });
+    const borough = restaurants[0]?.borough ?? "Manhattan";
+    const list = boroughMap.get(borough) || [];
+    list.push({ slug: slugify(name), name, restaurantCount: restaurants.length });
+    boroughMap.set(borough, list);
   }
-  neighborhoods.sort((a, b) => b.restaurantCount - a.restaurantCount);
+
+  const boroughs = Array.from(boroughMap.entries())
+    .map(([name, neighborhoods]) => {
+      neighborhoods.sort((a, b) => b.restaurantCount - a.restaurantCount);
+      return {
+        name,
+        totalRestaurants: neighborhoods.reduce((sum, n) => sum + n.restaurantCount, 0),
+        neighborhoods,
+      };
+    })
+    .sort((a, b) => b.totalRestaurants - a.totalRestaurants);
 
   return Response.json({
-    totalNeighborhoods: neighborhoods.length,
+    totalNeighborhoods: Array.from(byNeighborhood.keys()).length,
     totalRestaurants: index.size,
-    neighborhoods,
+    boroughs,
   });
 }
