@@ -437,22 +437,33 @@ const NYC_CITIES = new Set([
 const NYC_ZIP_PREFIXES = ["100", "101", "102", "103", "104", "110", "111", "112", "113", "114", "116"];
 
 function isBiltNYC(r: BiltRestaurant): boolean {
-  // Check state field first
+  // Check city object first (Bilt API returns {id, name, abbreviation})
+  const cityObj = r.city as { name?: string; abbreviation?: string } | string | null;
+  const cityName = typeof cityObj === "string"
+    ? cityObj
+    : cityObj?.name ?? "";
+  const cityAbbr = typeof cityObj === "string"
+    ? ""
+    : cityObj?.abbreviation ?? "";
+  
+  if (cityAbbr === "NYC" || cityName.toLowerCase().includes("new york")) {
+    return true;
+  }
+
+  // Check state field
   if (r.state && r.state.toUpperCase() === "NY") {
-    // Further filter to NYC-area by city or zip
-    const city = (r.city ?? "").toLowerCase().trim();
+    const city = cityName.toLowerCase().trim();
     if (city && NYC_CITIES.has(city)) return true;
     const zip = (r.zip_code ?? "").trim();
     if (zip && NYC_ZIP_PREFIXES.some((p) => zip.startsWith(p))) return true;
-    // If state is NY but no city/zip data, include it (better false positive than false negative)
     if (!city && !zip) return true;
   }
   // Fallback: check address string for NYC indicators
   const addr = (r.address ?? "").toLowerCase();
   if (addr.includes(", ny ") || addr.includes(", new york")) {
-    if (NYC_CITIES.has((r.city ?? "").toLowerCase().trim())) return true;
+    const city = cityName.toLowerCase().trim();
+    if (city && NYC_CITIES.has(city)) return true;
     if (NYC_ZIP_PREFIXES.some((p) => addr.includes(p))) return true;
-    // Generic NY address — include
     return true;
   }
   return false;
@@ -748,6 +759,13 @@ const NON_NYC_LOCATIONS = [
   "capitol hill", "french quarter", "buckhead", "river north",
   // Non-US
   "london", "paris", "tokyo", "penzance", "montville",
+  "amsterdam", "berlin", "rome", "milan", "bergamo", "arnhem",
+  "dublin", "barcelona", "madrid", "zurich", "vienna", "sydney",
+  "melbourne", "toronto", "vancouver", "montreal", "singapore",
+  "hong kong", "dubai", "mumbai", "buenos aires",
+  // Country indicators
+  "italia", "italy", "deutschland", "germany", "france", "spain",
+  "nederland", "netherlands", "england", "canada", "australia",
 ];
 
 const NYC_INDICATORS = [
@@ -896,6 +914,16 @@ export function evaluateSearchResults(
         continue;
       }
       const dealInfo = extractDealDetails(r.title, r.snippet);
+      
+      // For discount/deal platforms, require actual deal details OR a deal-specific URL
+      // A bare "Carbone in New York, NY" listing isn't a deal
+      const isDealURL = lowerHref.includes("/deal") || lowerHref.includes("/offer") || 
+                        lowerHref.includes("/coupon") || lowerHref.includes("/voucher") ||
+                        lowerHref.includes("/promo");
+      if (!dealInfo && !isDealURL && platform.rewardType === "discount") {
+        continue;
+      }
+      
       const details = dealInfo ? `${r.title} — ${dealInfo}` : (r.title || `Found on ${platform.name}`);
       return {
         platform: platform.name,
