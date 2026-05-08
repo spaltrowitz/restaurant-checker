@@ -22,7 +22,7 @@ export default function AboutPage() {
             Living in NYC, there are a lot of cashback apps, loyalty programs, and discount platforms for restaurants. Each one has different restaurants, different reward types, and no way to compare them.
           </p>
           <p>
-            So I&apos;d open Upside, check if the restaurant was there. Then Nea. Then Rakuten. Every single time. It was annoying.
+            So I&apos;d bounce between apps and deal sites to see if a restaurant showed up anywhere. Every single time. It was annoying.
           </p>
           <p className="text-[var(--color-text-primary)] font-medium">
             EatDiscounted checks all of them at once. Type a restaurant name, and in a few seconds you see every deal available — real cashback, discounts, and credit card rewards.

@@ -201,7 +201,7 @@ describe("braveSearch()", () => {
 //  batchSearch() — Batch search orchestration
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 describe("batchSearch()", () => {
-  it("returns results for all non-Blackbird platforms", async () => {
+  it("returns results for all active search platforms", async () => {
     const restaurantName = uniqueRestaurantName();
     const mockResponse = {
       web: {
@@ -223,11 +223,9 @@ describe("batchSearch()", () => {
 
     const results = await batchSearch(restaurantName);
 
-    // Should have results for all non-Blackbird, non-Upside, non-Bilt platforms
+    // Should have results for all active platforms that rely on batch search
     const platformNames = [
       "inKind",
-      "Nea",
-      "Rakuten Dining",
       "Too Good To Go",
       "Pulsd",
       "Restaurant.com",
@@ -239,10 +237,13 @@ describe("batchSearch()", () => {
       expect(results.has(name)).toBe(true);
     }
 
-    // Should NOT include Blackbird, Upside, or Bilt Rewards (they have dedicated checkers)
+    // Should NOT include dedicated-checker or disabled platforms
     expect(results.has("Blackbird")).toBe(false);
     expect(results.has("Upside")).toBe(false);
     expect(results.has("Bilt Rewards")).toBe(false);
+    expect(results.has("Rewards Network")).toBe(false);
+    expect(results.has("Nea")).toBe(false);
+    expect(results.has("Rakuten Dining")).toBe(false);
   });
 
   it("uses cache when available", async () => {
@@ -401,13 +402,12 @@ describe("batchSearch()", () => {
 
     const fetchCalls = vi.mocked(fetch).mock.calls;
 
-    // Rakuten Dining has searchQuery: "dining" (Bilt now uses its own dedicated checker)
-    const rakutenCall = fetchCalls.find((call) => {
+    const restaurantComCall = fetchCalls.find((call) => {
       const url = call[0] as string;
-      return url.includes(restaurantName) && url.includes("dining");
+      return url.includes(restaurantName) && url.includes("certificate");
     });
 
-    expect(rakutenCall).toBeDefined();
+    expect(restaurantComCall).toBeDefined();
   });
 
   it("handles mixed success and failure across platforms", async () => {

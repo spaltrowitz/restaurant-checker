@@ -4,12 +4,12 @@ Find which dining discount platforms list a given restaurant — from the web or
 
 ## Web App
 
-A Next.js web UI that checks 8 discount platforms for any restaurant name. Results stream in as each platform is checked.
+A Next.js web UI that checks 8 currently accessible discount platforms for any restaurant name. Results stream in as each platform is checked.
 
 ### Pages
 
 - **`/`** — Search page: type a restaurant name, see which platforms have it
-- **`/platforms`** — Info page: all 9 platforms with reward types, card linking, and conflicts
+- **`/platforms`** — Info page: all 8 currently checked platforms with reward types, card linking, and conflicts
 
 ### Quick Start
 
@@ -31,7 +31,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 - Results stream in via SSE (Server-Sent Events) as each platform completes
 - 2-second rate limit between platform checks (handled server-side)
-- App-only platforms (Upside, Seated, Nea, Rakuten) may not appear in web search — check the app manually
+- Only platforms with a current public web/API surface are included in search results
 - **Free tier**: Brave Search offers 2,000 queries per month on the free tier
 
 ### Architecture
@@ -74,20 +74,20 @@ pip install -r cli/requirements.txt
 python cli/restaurant_checker.py check "Carbone"
 ```
 
-## Platforms (8)
+## Platforms Currently Checked (8)
 
 | Platform | Reward Type | Personalized? | Card Linked? |
 |----------|:-----------:|:-------------:|:------------:|
 | **Blackbird** | ⭐ Points ($FLY) | Yes | Yes |
 | **inKind** | 🎟️ Credit (house accounts) | No | No |
 | **Upside** | 💵 Cashback | Yes | Yes ⚠️ |
-| **Seated** | 💵 Cashback | Yes | Yes ⚠️ |
-| **Nea** | 💵 Cashback (NYC only) | Yes | Yes ⚠️ |
-| **Bilt Rewards** | ⭐ Points (1-11x/dollar) | No | Yes |
-| **Rakuten Dining** | 💵 Cashback (5-10%) | No | Yes |
 | **Too Good To Go** | 🏷️ Discount (~1/3 price) | No | No |
+| **Pulsd** | 🏷️ Discount (35-69% off) | No | No |
+| **Restaurant.com** | 🎟️ Discount certificates | No | No |
+| **Groupon** | 🏷️ Discount (deals) | No | No |
+| **LivingSocial** | 🏷️ Discount (deals) | No | No |
 
-> ⚠️ **Card conflict**: Seated, Upside, and Nea cannot share the same linked card.
+> ⚠️ **Card conflict**: Upside can conflict with other card-linked dining apps on the same card.
 
 ## Compliance
 

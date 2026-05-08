@@ -52,8 +52,8 @@ export default function PlatformsPage() {
         </div>
 
         <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-overlay)] p-5 text-xs text-[var(--color-text-muted)] space-y-2">
-          <p><strong className="text-[var(--color-text-secondary)]">Card-linked:</strong> Upside, Rakuten, and Blackbird require linking a debit or credit card.</p>
-          <p><strong className="text-[var(--color-text-secondary)]">Personalized:</strong> Upside, Blackbird, and Nea show different offers per user. We check if a restaurant is listed, not your specific discount.</p>
+          <p><strong className="text-[var(--color-text-secondary)]">Card-linked:</strong> Upside and Blackbird require linking a debit or credit card.</p>
+          <p><strong className="text-[var(--color-text-secondary)]">Personalized:</strong> Upside and Blackbird show different offers per user. We check if a restaurant is listed, not your specific discount.</p>
         </div>
       </main>
     </>
