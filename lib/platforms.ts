@@ -54,7 +54,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "",
     domainFilter: "",
     tier: 1,
-    valueCategory: "additional",
+    valueCategory: "primary",
   },
   {
     name: "inKind",
@@ -140,7 +140,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "dining",
     domainFilter: "rakuten.com/dining",
     tier: 2,
-    valueCategory: "additional",
+    valueCategory: "primary",
   },
   {
     name: "Too Good To Go",
@@ -223,7 +223,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "restaurant deal NYC",
     domainFilter: "groupon.com",
     tier: 2,
-    valueCategory: "primary",
+    valueCategory: "additional",
   },
   {
     name: "LivingSocial",
@@ -239,7 +239,7 @@ export const PLATFORMS: Platform[] = [
     searchQuery: "restaurant deal",
     domainFilter: "livingsocial.com",
     tier: 2,
-    valueCategory: "primary",
+    valueCategory: "additional",
   },
 ];
 
