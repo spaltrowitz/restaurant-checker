@@ -175,8 +175,11 @@ export default function BrowsePage() {
                 className={`text-left rounded-2xl border-2 border-[var(--color-border)] bg-white p-6 transition-all duration-300 hover:border-[var(--color-gold)]/40 hover:shadow-lg hover:shadow-orange-50 hover:scale-[1.02] animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}
               >
                 <h2 className="text-xl font-black text-[var(--color-text-primary)]">{b.name}</h2>
-                <p className="mt-1 text-sm text-[var(--color-gold)] font-semibold">
-                  {b.totalRestaurants} restaurants · {b.neighborhoods.length} neighborhoods
+                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                  {b.neighborhoods.length} neighborhood{b.neighborhoods.length !== 1 ? "s" : ""}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--color-gold)] font-semibold">
+                  {b.totalRestaurants} restaurant{b.totalRestaurants !== 1 ? "s" : ""} with deals
                 </p>
               </button>
             ))}
