@@ -16,19 +16,8 @@ export default function Home() {
             <div className="h-1 rounded-full bg-gradient-to-r from-[#ff6b35] via-[#ec4899] to-[#8b5cf6] mx-auto animate-line-grow mb-6"></div>
           </div>
           <p className="text-lg sm:text-2xl font-medium text-[var(--color-text-secondary)] max-w-lg mx-auto leading-relaxed mb-5 animate-badge-pop">
-            Find every deal, discount &amp; reward at any NYC restaurant
+            Search <span className="text-[var(--color-text-primary)] font-bold">12+ programs</span> for deals at any NYC restaurant
           </p>
-          <div className="flex items-center justify-center gap-2.5 flex-wrap animate-badge-pop" style={{ animationDelay: "0.7s" }}>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3.5 py-1.5 text-xs font-bold text-green-700 ring-1 ring-green-200">
-              4 verified APIs
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 ring-1 ring-blue-200">
-              8 airline programs
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3.5 py-1.5 text-xs font-bold text-orange-700 ring-1 ring-orange-200">
-              Cashback &amp; points
-            </span>
-          </div>
         </div>
         <div className="mt-8">
           <SearchBar />
