@@ -1,4 +1,4 @@
-import { PLATFORMS, detectCardConflicts, CheckResult } from "@/lib/platforms";
+import { ACTIVE_PLATFORMS as PLATFORMS, detectCardConflicts, CheckResult } from "@/lib/platforms";
 import {
   checkBlackbird,
   checkUpside,

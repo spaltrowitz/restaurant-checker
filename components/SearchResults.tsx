@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
-import { PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
+import { ACTIVE_PLATFORMS as PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
 import { findBestDeal } from "@/lib/best-deal";
 import { ResultCard } from "./ResultCard";
 import { BestDealCard } from "./BestDealCard";

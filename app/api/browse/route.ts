@@ -305,9 +305,20 @@ export async function GET(request: NextRequest) {
 
   const index = getIndex();
 
+  // Only include restaurants that have at least one primary deal (real cashback/discount)
+  // Bilt and Rewards Network alone don't qualify — they're credit card point programs
+  const PRIMARY_PLATFORM_KEYS = new Set(["upside"]);
+  const primaryIndex = new Map<string, RestaurantEntry>();
+  for (const [key, entry] of index.entries()) {
+    const hasPrimary = Object.keys(entry.platforms).some((k) => PRIMARY_PLATFORM_KEYS.has(k));
+    if (hasPrimary) {
+      primaryIndex.set(key, entry);
+    }
+  }
+
   // Group by neighborhood
   const byNeighborhood = new Map<string, RestaurantEntry[]>();
-  for (const entry of index.values()) {
+  for (const entry of primaryIndex.values()) {
     const list = byNeighborhood.get(entry.neighborhood) || [];
     list.push(entry);
     byNeighborhood.set(entry.neighborhood, list);
@@ -380,7 +391,7 @@ export async function GET(request: NextRequest) {
 
   return Response.json({
     totalNeighborhoods: Array.from(byNeighborhood.keys()).length,
-    totalRestaurants: index.size,
+    totalRestaurants: primaryIndex.size,
     boroughs,
   });
 }

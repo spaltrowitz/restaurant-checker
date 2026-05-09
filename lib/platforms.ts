@@ -14,6 +14,7 @@ export interface Platform {
   skipSiteOperator?: boolean;
   tier: 1 | 2;
   valueCategory: "primary" | "additional";
+  disabled?: boolean;
 }
 
 export interface CheckResult {
@@ -107,6 +108,7 @@ export const PLATFORMS: Platform[] = [
     domainFilter: "neaapp.ai",
     tier: 2,
     valueCategory: "primary",
+    disabled: true,
   },
   {
     name: "Bilt Rewards",
@@ -141,6 +143,7 @@ export const PLATFORMS: Platform[] = [
     domainFilter: "rakuten.com/dining",
     tier: 2,
     valueCategory: "primary",
+    disabled: true,
   },
   {
     name: "Too Good To Go",
@@ -261,6 +264,8 @@ export function detectCardConflicts(foundPlatforms: string[]): string[] | null {
   }
   return null;
 }
+
+export const ACTIVE_PLATFORMS = PLATFORMS.filter((p) => !p.disabled);
 
 export function getPlatform(name: string): Platform | undefined {
   return PLATFORMS.find((p) => p.name === name);

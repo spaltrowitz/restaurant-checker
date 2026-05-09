@@ -1,5 +1,5 @@
 import { Nav } from "@/components/Nav";
-import { PLATFORMS } from "@/lib/platforms";
+import { ACTIVE_PLATFORMS as PLATFORMS } from "@/lib/platforms";
 
 export default function PlatformsPage() {
   return (

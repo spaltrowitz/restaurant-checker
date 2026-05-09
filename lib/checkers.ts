@@ -1,4 +1,4 @@
-import { Platform, CheckResult, PLATFORMS } from "./platforms";
+import { Platform, CheckResult, PLATFORMS, ACTIVE_PLATFORMS } from "./platforms";
 import { matchesRestaurant, slugVariants, norm } from "./matching";
 import * as fs from "fs";
 import * as path from "path";
@@ -640,7 +640,7 @@ async function braveSearch(query: string): Promise<SearchResult[]> {
 export async function batchSearch(
   name: string
 ): Promise<Map<string, SearchResponse>> {
-  const nonBlackbird = PLATFORMS.filter((p) => p.name !== "Blackbird" && p.name !== "Upside" && p.name !== "Bilt Rewards" && p.name !== "Rewards Network");
+  const nonBlackbird = ACTIVE_PLATFORMS.filter((p) => p.name !== "Blackbird" && p.name !== "Upside" && p.name !== "Bilt Rewards" && p.name !== "Rewards Network");
   const resultMap = new Map<string, SearchResponse>();
 
   // Initialize all as blocked (fallback)
@@ -800,7 +800,10 @@ export function isNonNYCResult(title: string, snippet: string, href: string): bo
     }
   }
 
-  const hasNonNYC = NON_NYC_LOCATIONS.some((loc) => combined.includes(loc));
+  const hasNonNYC = NON_NYC_LOCATIONS.some((loc) => {
+    const re = new RegExp(`\\b${loc}\\b`);
+    return re.test(combined);
+  });
   return hasNonNYC;
 }
 

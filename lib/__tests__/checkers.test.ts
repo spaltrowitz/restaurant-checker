@@ -223,11 +223,9 @@ describe("batchSearch()", () => {
 
     const results = await batchSearch(restaurantName);
 
-    // Should have results for all non-Blackbird, non-Upside, non-Bilt platforms
+    // Should have results for all active non-dedicated-checker platforms
     const platformNames = [
       "inKind",
-      "Nea",
-      "Rakuten Dining",
       "Too Good To Go",
       "Pulsd",
       "Restaurant.com",
@@ -239,7 +237,12 @@ describe("batchSearch()", () => {
       expect(results.has(name)).toBe(true);
     }
 
-    // Should NOT include Blackbird, Upside, or Bilt Rewards (they have dedicated checkers)
+    // Should NOT include dedicated-checker or disabled platforms
+    expect(results.has("Blackbird")).toBe(false);
+    expect(results.has("Upside")).toBe(false);
+    expect(results.has("Bilt Rewards")).toBe(false);
+    expect(results.has("Nea")).toBe(false);
+    expect(results.has("Rakuten Dining")).toBe(false);
     expect(results.has("Blackbird")).toBe(false);
     expect(results.has("Upside")).toBe(false);
     expect(results.has("Bilt Rewards")).toBe(false);
@@ -318,14 +321,14 @@ describe("batchSearch()", () => {
     // Clear cache to ensure fresh search
     await batchSearch(restaurantName);
 
-    // Check that fetch was called with site: operator for platforms with domainFilter (not inKind which uses skipSiteOperator)
+    // Check that fetch was called with site: operator for platforms with domainFilter
     const fetchCalls = vi.mocked(fetch).mock.calls;
-    const rakutenCall = fetchCalls.find((call) => {
+    const tgtgCall = fetchCalls.find((call) => {
       const url = call[0] as string;
-      return url.includes(restaurantName) && url.includes("site%3Arakuten.com");
+      return url.includes(restaurantName) && url.includes("site%3Atoogoodtogo.com");
     });
 
-    expect(rakutenCall).toBeDefined();
+    expect(tgtgCall).toBeDefined();
   });
 
   it("skips site: operator for platforms with skipSiteOperator", async () => {
