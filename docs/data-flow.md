@@ -44,11 +44,8 @@ flowchart TB
         Brave["Brave Search API\n2,000 queries/mo\nsite:-scoped queries"]
         InKind["inKind"]
         TGTG["Too Good To Go"]
+        Pulsd["Pulsd"]
         RestCom["Restaurant.com"]
-        Groupon["Groupon"]
-        Rakuten["Rakuten Dining"]
-        Nea["Nea"]
-        Seated["Seated"]
     end
 
     App -->|"GET /api/check?q=restaurant"| Server
@@ -59,14 +56,11 @@ flowchart TB
     Server -->|"parallel\ncheck"| Bilt
     Server -->|"parallel\ncheck"| RewardsNet
 
-    Server -->|"batch search\n6 platforms"| Brave
+    Server -->|"batch search\n4 platforms"| Brave
     Brave -.->|"site:inkind.com"| InKind
     Brave -.->|"site:toogoodtogo.com"| TGTG
+    Brave -.->|"site:pulsd.com"| Pulsd
     Brave -.->|"site:restaurant.com"| RestCom
-    Brave -.->|"site:groupon.com"| Groupon
-    Brave -.->|"site:rakuten.com"| Rakuten
-    Brave -.->|"site:nea.com"| Nea
-    Brave -.->|"site:seated.com"| Seated
 
     Server <-->|"community reports\nfavorites"| SupabaseDB
     Server <-->|"local data"| SQLite
