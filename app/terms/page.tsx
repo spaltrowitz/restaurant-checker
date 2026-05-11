@@ -38,7 +38,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-3">4. Third-Party Platforms</h2>
-            <p>EatDiscounted is not affiliated with, endorsed by, or partnered with any discount platform including Upside, Bilt Rewards, Blackbird, inKind, Rewards Network, Too Good To Go, Restaurant.com, Groupon, Rakuten Dining, Seated, or Nea. Using deals from these platforms is subject to their respective terms.</p>
+            <p>EatDiscounted is not affiliated with, endorsed by, or partnered with any discount platform including Upside, Bilt Rewards, Blackbird, inKind, Rewards Network, Too Good To Go, Restaurant.com, Rakuten Dining, Seated, or Nea. Using deals from these platforms is subject to their respective terms.</p>
           </section>
 
           <section>

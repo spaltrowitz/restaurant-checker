@@ -59,16 +59,6 @@ const PLATFORM_INFO: Record<string, PlatformInfo> = {
     whoItsFor: "Anyone",
     example: "$25 certificate for $4–10",
   },
-  Groupon: {
-    howItWorks: "Daily deals and discount vouchers for restaurants. Buy upfront, redeem when you visit.",
-    whoItsFor: "Anyone",
-    example: "40–60% off prix fixe meals",
-  },
-  LivingSocial: {
-    howItWorks: "Local deals platform — similar to Groupon. Discounted dining experiences and vouchers.",
-    whoItsFor: "Anyone",
-    example: "Discounted dining experiences",
-  },
   "The Infatuation": {
     howItWorks: "Editorial deal roundups from trusted restaurant critics. Curated picks, not a marketplace.",
     whoItsFor: "NYC diners seeking curated picks",

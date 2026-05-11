@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { ACTIVE_PLATFORMS as PLATFORMS, CheckResult, ConflictWarning as ConflictWarningType } from "@/lib/platforms";
@@ -177,9 +178,6 @@ function SearchResultsInner() {
   if (!query) return null;
 
   const resultsArr = Array.from(results.values());
-  const communityConfirmedCount = Array.from(communityReports.values()).filter(
-    (r) => r.count >= 2
-  ).length;
   const foundCount =
     resultsArr.filter((r) => r.found).length +
     Array.from(communityReports.entries()).filter(
@@ -284,15 +282,16 @@ function SearchResultsInner() {
   // Celebration summary card (post-stream)
   const celebrationSummary = isDone && resultsArr.length > 0 && (
     <div
-      className={`mb-6 rounded-xl p-6 animate-scale-in ${
+      className={`mb-6 rounded-[1.5rem] p-5 sm:p-6 animate-scale-in ${
         foundCount > 0
-          ? "bg-gradient-to-br from-[var(--color-success-dim)] via-[var(--color-surface-raised)] to-[var(--color-surface-raised)] border border-[var(--color-success)]/30"
+          ? "bg-gradient-to-br from-[var(--color-success-dim)] via-[var(--color-surface-raised)] to-[var(--color-surface-raised)] border border-[var(--color-success)]/30 shadow-sm"
           : "bg-[var(--color-surface-raised)] border border-[var(--color-border)]"
       }`}
     >
       {foundCount > 0 ? (
         <>
           <div className="flex items-center gap-2 mb-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-success)] text-sm font-black text-white" aria-hidden="true">✓</span>
             <h2 className="text-xl font-bold text-[var(--color-success)]">
               Found on {foundCount} platform{foundCount !== 1 ? "s" : ""}
               {apiFoundCount > 0 || webFoundCount > 0
@@ -330,8 +329,22 @@ function SearchResultsInner() {
               ? `${unavailableCount} platform${
                   unavailableCount !== 1 ? "s" : ""
                 } need manual check — they might still have deals!`
-              : "This restaurant isn't on any discount platforms yet. Try searching another spot!"}
+               : "This restaurant isn't on any discount platforms yet. Try searching another spot!"}
           </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/browse"
+              className="touch-target inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white shadow-sm shadow-orange-900/10 transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              Browse neighborhood deals
+            </Link>
+            <Link
+              href="/"
+              className="touch-target inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-[var(--color-accent)] ring-1 ring-[var(--color-border)] transition-all hover:bg-[var(--color-surface-overlay)]"
+            >
+              Try another search
+            </Link>
+          </div>
         </>
       )}
     </div>
@@ -379,9 +392,7 @@ function SearchResultsInner() {
         </div>
       )}
 
-      {!error && isDone && (
-        <FilterBar filters={filters} onChange={setFilters} />
-      )}
+      {!error && celebrationSummary}
 
       {!error && isDone && (() => {
         const bestDealResult = findBestDeal(resultsArr);
@@ -394,7 +405,9 @@ function SearchResultsInner() {
         );
       })()}
 
-      {!error && celebrationSummary}
+      {!error && isDone && (
+        <FilterBar filters={filters} onChange={setFilters} />
+      )}
 
       {/* During streaming: flat list */}
       {!error && !isDone && (
@@ -410,7 +423,7 @@ function SearchResultsInner() {
           {sortedPrimary.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-green-600">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-result-tier1)]">
                   Deals &amp; Cashback
                 </span>
               </div>
@@ -438,7 +451,7 @@ function SearchResultsInner() {
           {sortedAdditional.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-result-tier2)]">
                   Also Found
                 </span>
                 <span className="text-xs text-[var(--color-text-muted)]">
@@ -455,7 +468,7 @@ function SearchResultsInner() {
 
       {/* Not found — collapsed line */}
       {notFoundPlatforms.length > 0 && (
-        <div className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-50 animate-fade-in transition-all duration-300 hover:opacity-70">
+        <div className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-4 opacity-65 animate-fade-in transition-all duration-300 hover:opacity-85">
           <p className="text-sm text-[var(--color-text-muted)]">
             <span className="font-medium text-[var(--color-text-secondary)]">Not available on:</span>{" "}
             {notFoundPlatforms.map((p) => p.name).join(" · ")}

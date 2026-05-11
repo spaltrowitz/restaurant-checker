@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 export type RewardFilter = "all" | "cashback" | "points" | "discounts" | "app-rewards";
 export type SortOption = "relevance" | "name";
@@ -20,20 +20,26 @@ const REWARD_PILLS: { value: RewardFilter; label: string }[] = [
 ];
 
 const STORAGE_KEY = "eatdiscounted-filters";
+const DEFAULT_FILTERS: FilterState = {
+  rewardType: "all",
+  sortBy: "relevance",
+  cardFreeOnly: false,
+};
 
 function loadFilters(): FilterState {
-  const defaults: FilterState = { rewardType: "all", sortBy: "relevance", cardFreeOnly: false };
+  if (typeof window === "undefined") return DEFAULT_FILTERS;
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return defaults;
+    if (!stored) return DEFAULT_FILTERS;
     const parsed = JSON.parse(stored);
-    return { ...defaults, ...parsed };
+    return { ...DEFAULT_FILTERS, ...parsed };
   } catch {
-    return defaults;
+    return DEFAULT_FILTERS;
   }
 }
 
 function saveFilters(filters: FilterState) {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
   } catch {
@@ -47,15 +53,7 @@ interface FilterBarProps {
 }
 
 export function useFilterState(): [FilterState, (f: FilterState) => void] {
-  const [filters, setFilters] = useState<FilterState>({
-    rewardType: "all",
-    sortBy: "relevance",
-    cardFreeOnly: false,
-  });
-
-  useEffect(() => {
-    setFilters(loadFilters());
-  }, []);
+  const [filters, setFilters] = useState<FilterState>(loadFilters);
 
   const updateFilters = useCallback((next: FilterState) => {
     setFilters(next);
@@ -77,7 +75,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
   const activeCount = getActiveFilterCount(filters);
 
   return (
-    <div className="mb-5 space-y-3 animate-fade-in">
+    <div className="mb-5 space-y-3 animate-fade-in" aria-label="Filter search results">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Filters</p>
@@ -90,7 +88,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
         {activeCount > 0 && (
           <button
             onClick={() => onChange({ rewardType: "all", sortBy: "relevance", cardFreeOnly: false })}
-            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors"
+            className="touch-target inline-flex items-center rounded-xl px-3 text-xs font-bold text-[var(--color-text-muted)] transition-colors hover:bg-white hover:text-[var(--color-accent)]"
           >
             Clear all
           </button>
@@ -105,12 +103,13 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
             <button
               key={pill.value}
               onClick={() => onChange({ ...filters, rewardType: pill.value })}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ring-1 ${
+              className={`touch-target shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 ring-1 ${
                 isActive
-                  ? "bg-[var(--color-gold)]/15 text-[var(--color-gold)] ring-[var(--color-gold)]/40"
+                  ? "bg-[var(--color-accent)] text-white ring-[var(--color-accent)]/40"
                   : "bg-[var(--color-surface-overlay)] text-[var(--color-text-muted)] ring-[var(--color-border)] hover:text-[var(--color-text-secondary)] hover:ring-[var(--color-border)]"
               }`}
               aria-pressed={isActive}
+              aria-label={`Show ${pill.label.toLowerCase()} rewards`}
             >
               {pill.label}
             </button>
@@ -126,7 +125,8 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
             id="sort-select"
             value={filters.sortBy}
             onChange={(e) => onChange({ ...filters, sortBy: e.target.value as SortOption })}
-            className="rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-gold)]/50"
+            aria-label="Sort search results"
+            className="min-h-11 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] focus:outline-none focus:ring-4 focus:ring-[var(--color-accent)]/15"
           >
             <option value="relevance">Relevance</option>
             <option value="name">Platform (A–Z)</option>
@@ -134,20 +134,21 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
         </div>
 
         <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-          <span className="text-xs text-[var(--color-text-muted)]">No card required</span>
+          <span className="text-xs font-semibold text-[var(--color-text-muted)]">No card required</span>
           <button
             role="switch"
             aria-checked={filters.cardFreeOnly}
+            aria-label="Show only rewards that do not require a linked card"
             onClick={() => onChange({ ...filters, cardFreeOnly: !filters.cardFreeOnly })}
-            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ${
+            className={`touch-target relative inline-flex h-11 w-14 shrink-0 items-center rounded-full transition-colors duration-200 ${
               filters.cardFreeOnly
-                ? "bg-[var(--color-gold)]"
+                ? "bg-[var(--color-accent)]"
                 : "bg-[var(--color-surface-overlay)] ring-1 ring-[var(--color-border)]"
             }`}
           >
             <span
-              className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${
-                filters.cardFreeOnly ? "translate-x-4.5" : "translate-x-0.5"
+              className={`inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                filters.cardFreeOnly ? "translate-x-6" : "translate-x-1"
               }`}
             />
           </button>

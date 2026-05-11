@@ -52,7 +52,7 @@ const REWARDS_NETWORK_PROGRAMS = [
 function CommunityBadge({ report }: { report: CommunityReportInfo }) {
   if (report.count >= 2) {
     return (
-      <span className="inline-flex items-center rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-medium text-purple-300 ring-1 ring-purple-500/20">
+      <span className="inline-flex items-center rounded-full bg-[var(--color-community-dim)] px-2.5 py-1 text-xs font-semibold text-[var(--color-community)] ring-1 ring-[var(--color-community)]/20">
         Community confirmed ({report.count})
       </span>
     );
@@ -107,7 +107,9 @@ function ReportButton({
     <button
       onClick={handleReport}
       disabled={status === "loading"}
-      className="mt-1 inline-flex items-center gap-1 rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-300 hover:bg-purple-500/20 transition-all duration-200 disabled:opacity-50 ring-1 ring-purple-500/20"
+      aria-busy={status === "loading"}
+      aria-label={`Report that ${restaurantName} is on ${platformName}`}
+      className="touch-target mt-1 inline-flex items-center gap-1 rounded-lg bg-[var(--color-community-dim)] px-4 py-2 text-xs font-bold text-[var(--color-community)] ring-1 ring-[var(--color-community)]/20 transition-all duration-200 hover:bg-[var(--color-community)]/15 disabled:opacity-50"
     >
       {status === "loading" ? "Reporting…" : "I found this here"}
     </button>
@@ -124,7 +126,7 @@ function ExplainerButton({ platformName }: { platformName: string }) {
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         aria-label={`How ${platformName} works`}
-        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:bg-[var(--color-surface-overlay)] transition-colors text-xs font-bold"
+        className="touch-target inline-flex items-center justify-center rounded-full text-xs font-bold text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-overlay)] hover:text-[var(--color-accent)]"
       >
         ?
       </button>
@@ -150,7 +152,7 @@ function RewardsNetworkExpander({ details }: { details: string }) {
       <p className="text-lg font-extrabold text-[var(--color-gold)]">{rateDisplay}</p>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+        className="touch-target mt-2 inline-flex items-center rounded-lg text-xs font-bold text-[var(--color-result-tier2)] transition-colors hover:bg-[var(--color-result-tier2-dim)]"
         aria-expanded={expanded}
       >
         {expanded ? "Hide programs ▲" : `View all ${REWARDS_NETWORK_PROGRAMS.length} programs ▼`}
@@ -211,29 +213,29 @@ export function ResultCard({
   if (result.found || communityConfirmed) {
     const borderClass = isTier1
       ? isApiResult
-        ? "border-2 border-[var(--color-tier1-border)] hover:border-emerald-400/70"
-        : "border-2 border-emerald-500/40 hover:border-emerald-500/60"
-      : "border border-[var(--color-tier2-border)] hover:border-blue-400/40";
+        ? "border-2 border-[var(--color-tier1-border)] hover:border-[var(--color-result-tier1)]/70"
+        : "border-2 border-[var(--color-result-tier1)]/40 hover:border-[var(--color-result-tier1)]/60"
+      : "border border-[var(--color-tier2-border)] hover:border-[var(--color-result-tier2)]/40";
 
     const bgClass = isTier1
       ? "bg-gradient-to-br from-[var(--color-api-green-dim)] to-[var(--color-surface-raised)]"
       : "bg-gradient-to-br from-[var(--color-web-blue-dim)] to-[var(--color-surface-raised)]";
 
     const shadowClass = isTier1
-      ? "hover:shadow-lg hover:shadow-emerald-500/10"
-      : "hover:shadow-md hover:shadow-blue-500/5";
+      ? "hover:shadow-lg hover:shadow-green-900/10"
+      : "hover:shadow-md hover:shadow-blue-900/5";
 
     const paddingClass = isTier1 ? "p-6" : "p-4";
 
     return (
       <div className={`relative flex items-start gap-4 rounded-xl ${borderClass} ${bgClass} ${paddingClass} animate-fade-in-up transition-all duration-300 ${shadowClass}`}>
         {restaurantName && <FavoriteButton name={restaurantName} />}
-        <span className="mt-1 w-2 h-2 rounded-full bg-green-500 shrink-0" aria-label="Found"></span>
+        <span className="mt-1 w-2 h-2 rounded-full bg-[var(--color-result-tier1)] shrink-0" aria-label="Found"></span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className={`font-bold text-[var(--color-text-primary)] ${isTier1 ? "text-base" : "text-sm"}`}>
+            <h3 className={`font-bold text-[var(--color-text-primary)] ${isTier1 ? "text-base" : "text-sm"}`}>
               {platformName}
-            </p>
+            </h3>
             <ExplainerButton platformName={platformName} />
             {platform && (
               <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-3 py-1 text-xs font-semibold text-[var(--color-gold)] ring-1 ring-[var(--color-gold)]/30">
@@ -241,12 +243,12 @@ export function ResultCard({
               </span>
             )}
             {isApiResult && (
-              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400 ring-1 ring-emerald-500/20">
+              <span className="inline-flex items-center rounded-full bg-[var(--color-result-tier1-dim)] px-2.5 py-1 text-xs font-semibold text-[var(--color-result-tier1)] ring-1 ring-[var(--color-result-tier1)]/20">
                 Verified
               </span>
             )}
             {isWebSearch && (
-              <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-400 ring-1 ring-blue-500/20">
+              <span className="inline-flex items-center rounded-full bg-[var(--color-result-tier2-dim)] px-2.5 py-1 text-xs font-semibold text-[var(--color-result-tier2)] ring-1 ring-[var(--color-result-tier2)]/20">
                 Web search
               </span>
             )}
@@ -277,8 +279,8 @@ export function ResultCard({
 
           {/* Inline conflict warning */}
           {conflictWarning && (
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-warning)]">
-              <span>Requires different card than other platforms</span>
+            <div className="mt-3 rounded-xl bg-[var(--color-warning-dim)] px-3 py-2 text-xs font-semibold text-[var(--color-warning)] ring-1 ring-[var(--color-warning)]/20">
+              <span>Different card may be required to stack this with another deal.</span>
             </div>
           )}
 
@@ -287,7 +289,7 @@ export function ResultCard({
               href={result.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-block text-sm font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-dim)] hover:underline truncate max-w-full transition-colors"
+              className="touch-target mt-3 inline-flex max-w-full items-center justify-center rounded-xl bg-[var(--color-accent)]/10 px-4 py-2 text-sm font-bold text-[var(--color-accent)] ring-1 ring-[var(--color-accent)]/20 transition-all hover:bg-[var(--color-accent)]/15"
             >
               View deal →
             </a>
@@ -297,7 +299,7 @@ export function ResultCard({
               href={platform.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-block text-sm font-medium text-[var(--color-gold)] hover:underline transition-colors"
+              className="touch-target mt-3 inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-[var(--color-accent)] ring-1 ring-[var(--color-border)] transition-all hover:bg-[var(--color-surface-overlay)]"
             >
               Open {platformName} →
             </a>
@@ -315,12 +317,12 @@ export function ResultCard({
   // SEARCH UNAVAILABLE state — amber/warning
   if (result.searchUnavailable) {
     return (
-      <div className="relative flex items-start gap-4 rounded-xl border-2 border-[var(--color-warning)]/30 bg-gradient-to-br from-[var(--color-warning-dim)] to-[var(--color-surface-raised)] p-5 animate-fade-in-up transition-all duration-300 hover:border-[var(--color-warning)]/50 hover:shadow-lg hover:shadow-amber-500/10">
+      <div className="relative flex items-start gap-4 rounded-xl border-2 border-[var(--color-warning)]/30 bg-gradient-to-br from-[var(--color-warning-dim)] to-[var(--color-surface-raised)] p-5 animate-fade-in-up transition-all duration-300 hover:border-[var(--color-warning)]/50 hover:shadow-lg hover:shadow-orange-900/10">
         {restaurantName && <FavoriteButton name={restaurantName} />}
-        <span className="mt-1 w-2 h-2 rounded-full bg-amber-500 shrink-0" aria-label="Manual check needed"></span>
+        <span className="mt-1 w-2 h-2 rounded-full bg-[var(--color-warning)] shrink-0" aria-label="Manual check needed"></span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-bold text-[var(--color-warning)]">{platformName}</p>
+            <h3 className="font-bold text-[var(--color-warning)]">{platformName}</h3>
             <ExplainerButton platformName={platformName} />
             {platform && (
               <span className="inline-flex items-center rounded-full bg-[var(--color-surface-overlay)] px-3 py-1 text-xs font-semibold text-[var(--color-text-secondary)] ring-1 ring-[var(--color-border)]">
@@ -335,7 +337,7 @@ export function ResultCard({
               href={platform?.url ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-warning)]/15 px-4 py-2 text-sm font-semibold text-[var(--color-warning)] hover:bg-[var(--color-warning)]/25 transition-all duration-200 ring-1 ring-[var(--color-warning)]/30"
+              className="touch-target inline-flex items-center gap-1 rounded-lg bg-[var(--color-warning)]/15 px-4 py-2 text-sm font-bold text-[var(--color-warning)] ring-1 ring-[var(--color-warning)]/30 transition-all duration-200 hover:bg-[var(--color-warning)]/25"
             >
               {platform?.appOnly ? "Open app" : "Open"} {platformName} →
             </a>
@@ -359,7 +361,7 @@ export function ResultCard({
       <span className="mt-1 w-2 h-2 rounded-full bg-[var(--color-text-muted)] shrink-0 opacity-50" aria-label="Not found"></span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-medium text-[var(--color-text-muted)]">{platformName}</p>
+          <h3 className="font-medium text-[var(--color-text-muted)]">{platformName}</h3>
           <ExplainerButton platformName={platformName} />
           {communityReport && <CommunityBadge report={communityReport} />}
         </div>
@@ -370,7 +372,7 @@ export function ResultCard({
               href={platform.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
+              className="touch-target inline-flex items-center rounded-lg text-sm font-semibold text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-accent)]"
             >
               Check the app →
             </a>

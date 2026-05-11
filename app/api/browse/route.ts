@@ -293,12 +293,6 @@ function getIndex(): Map<string, RestaurantEntry> {
   return cachedIndex;
 }
 
-interface NeighborhoodSummary {
-  slug: string;
-  name: string;
-  restaurantCount: number;
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const neighborhoodSlug = searchParams.get("neighborhood");

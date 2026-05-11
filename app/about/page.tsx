@@ -5,12 +5,13 @@ export default function AboutPage() {
   return (
     <>
       <Nav />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-14 sm:py-20">
+      <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:py-18">
         <div className="mb-8 animate-title-reveal">
-          <h1 className="text-3xl sm:text-4xl font-black text-[var(--color-text-primary)] tracking-tighter">
-            About
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Why this exists</p>
+          <h1 className="text-4xl sm:text-5xl font-black text-[var(--color-text-primary)] tracking-tighter">
+            About EatDiscounted
           </h1>
-          <div className="h-1 rounded-full bg-gradient-to-r from-[#ff6b35] via-[#ec4899] to-[#8b5cf6] animate-line-grow mt-4"></div>
+          <div className="brand-rule animate-line-grow mt-4 max-w-28"></div>
         </div>
 
         <div className="space-y-6 text-[var(--color-text-secondary)] leading-relaxed animate-fade-in">
@@ -28,23 +29,23 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="mt-10 rounded-2xl border border-[var(--color-border)] bg-white p-6 animate-fade-in-up">
+        <div className="mt-10 rounded-2xl border border-[var(--color-border)] bg-white p-6 animate-fade-in-up shadow-sm">
           <h2 className="font-bold text-[var(--color-text-primary)] mb-3">How it works</h2>
-          <div className="grid grid-cols-4 gap-4 text-center text-sm">
+          <div className="grid gap-4 text-center text-sm sm:grid-cols-4">
             <div>
-              <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#ff6b35] to-[#e55a2b] text-white text-xs font-black flex items-center justify-center mb-2">1</div>
+              <div className="w-9 h-9 mx-auto rounded-full bg-[var(--color-accent)] text-white text-xs font-black flex items-center justify-center mb-2">1</div>
               <p className="text-[var(--color-text-muted)]">Type a name</p>
             </div>
             <div>
-              <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#ff6b35] to-[#e55a2b] text-white text-xs font-black flex items-center justify-center mb-2">2</div>
+              <div className="w-9 h-9 mx-auto rounded-full bg-[var(--color-accent)] text-white text-xs font-black flex items-center justify-center mb-2">2</div>
               <p className="text-[var(--color-text-muted)]">We check 12+ programs</p>
             </div>
             <div>
-              <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#ff6b35] to-[#e55a2b] text-white text-xs font-black flex items-center justify-center mb-2">3</div>
+              <div className="w-9 h-9 mx-auto rounded-full bg-[var(--color-accent)] text-white text-xs font-black flex items-center justify-center mb-2">3</div>
               <p className="text-[var(--color-text-muted)]">See every deal</p>
             </div>
             <div>
-              <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#ff6b35] to-[#e55a2b] text-white text-xs font-black flex items-center justify-center mb-2">4</div>
+              <div className="w-9 h-9 mx-auto rounded-full bg-[var(--color-accent)] text-white text-xs font-black flex items-center justify-center mb-2">4</div>
               <p className="text-[var(--color-text-muted)]">Open the app</p>
             </div>
           </div>
@@ -54,7 +55,7 @@ export default function AboutPage() {
           <p className="text-sm text-[var(--color-text-muted)] italic">
             NYC-focused. Built by a New Yorker who eats out too much.
           </p>
-          <Link href="/platforms" className="text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-bright)] font-semibold transition-colors">
+          <Link href="/platforms" className="touch-target inline-flex items-center rounded-xl text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-bright)] font-semibold transition-colors">
             View platforms →
           </Link>
         </div>

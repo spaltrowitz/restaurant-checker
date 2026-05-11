@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { useFavorites } from "@/hooks/useFavorites";
 
@@ -23,54 +23,95 @@ interface Borough {
   neighborhoods: Neighborhood[];
 }
 
-const PLATFORM_DISPLAY: Record<string, { label: string; color: string; textColor: string; ringColor: string }> = {
-  "bilt": { label: "Bilt", color: "bg-blue-50", textColor: "text-blue-700", ringColor: "ring-blue-200" },
-  "rewards-network": { label: "Rewards Network", color: "bg-sky-50", textColor: "text-sky-700", ringColor: "ring-sky-200" },
-  "upside": { label: "Upside", color: "bg-green-50", textColor: "text-green-700", ringColor: "ring-green-200" },
+const PLATFORM_DISPLAY: Record<string, { label: string; className: string }> = {
+  "bilt": { label: "Bilt", className: "bg-[var(--color-result-tier2-dim)] text-[var(--color-result-tier2)] ring-[var(--color-result-tier2)]/20" },
+  "rewards-network": { label: "Rewards Network", className: "bg-[var(--color-result-tier2-dim)] text-[var(--color-result-tier2)] ring-[var(--color-result-tier2)]/20" },
+  "upside": { label: "Upside", className: "bg-[var(--color-result-tier1-dim)] text-[var(--color-result-tier1)] ring-[var(--color-result-tier1)]/20" },
 };
 
 function RestaurantRow({ restaurant }: { restaurant: RestaurantDetail }) {
+  const [expanded, setExpanded] = useState(false);
   const platformKeys = Object.keys(restaurant.platforms);
-  const router = useRouter();
   const { isFavorite, toggleFavorite } = useFavorites();
   const saved = isFavorite(restaurant.name);
+  const panelId = `restaurant-${restaurant.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-[var(--color-border-subtle)] last:border-0">
-      <button
-        onClick={(e) => { e.stopPropagation(); toggleFavorite(restaurant.name); }}
-        className={`mt-1 shrink-0 text-sm transition-colors ${saved ? "text-orange-500" : "text-[var(--color-text-muted)] hover:text-orange-400"}`}
-        aria-label={saved ? "Remove from favorites" : "Save to favorites"}
-      >
-        {saved ? "★" : "☆"}
-      </button>
-      <div
-        className="flex-1 min-w-0 cursor-pointer"
-        onClick={() => router.push(`/?q=${encodeURIComponent(restaurant.name)}`)}
-        role="link"
-        tabIndex={0}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors truncate">
+    <article className="border-b border-[var(--color-border-subtle)] py-3 last:border-0">
+      <div className="flex items-start gap-3">
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleFavorite(restaurant.name); }}
+          className={`touch-target -ml-2 shrink-0 rounded-full text-lg transition-colors ${saved ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"}`}
+          aria-label={saved ? `Remove ${restaurant.name} from favorites` : `Save ${restaurant.name} to favorites`}
+          aria-pressed={saved}
+        >
+          {saved ? "★" : "☆"}
+        </button>
+        <button
+          type="button"
+          className="touch-target flex min-w-0 flex-1 items-start justify-between gap-3 rounded-2xl px-2 py-2 text-left transition-all hover:bg-[var(--color-surface-overlay)]/70"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold text-[var(--color-text-primary)]">
               {restaurant.name}
-            </p>
-            <p className="text-xs text-[var(--color-text-muted)] truncate">{restaurant.address}</p>
-          </div>
-          <div className="flex flex-wrap gap-1.5 shrink-0">
+            </span>
+            <span className="mt-0.5 block truncate text-xs text-[var(--color-text-muted)]">{restaurant.address}</span>
+            <span className="mt-2 flex flex-wrap gap-1.5">
+              {platformKeys.map((key) => {
+                const display = PLATFORM_DISPLAY[key] ?? { label: key, className: "bg-white text-[var(--color-text-secondary)] ring-[var(--color-border)]" };
+                const deal = restaurant.platforms[key]?.deal;
+                return (
+                  <span key={key} className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${display.className}`}>
+                    <span>{display.label}</span>
+                    {deal ? <span className="max-w-36 truncate opacity-90">: {deal}</span> : null}
+                  </span>
+                );
+              })}
+            </span>
+          </span>
+          <span className={`mt-1 text-xs text-[var(--color-text-muted)] transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} aria-hidden="true">▼</span>
+        </button>
+      </div>
+
+      {expanded && (
+        <div id={panelId} className="ml-10 mt-2 rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-sm animate-fade-in">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Available here</p>
+          <div className="mt-3 grid gap-3">
             {platformKeys.map((key) => {
-              const display = PLATFORM_DISPLAY[key] ?? { label: key, color: "bg-gray-50", textColor: "text-gray-600", ringColor: "ring-gray-200" };
-              const deal = restaurant.platforms[key]?.deal;
+              const display = PLATFORM_DISPLAY[key] ?? { label: key, className: "bg-white text-[var(--color-text-secondary)] ring-[var(--color-border)]" };
+              const platform = restaurant.platforms[key];
               return (
-                <span key={key} className={`inline-flex items-center gap-1 rounded-full ${display.color} px-2 py-0.5 text-[11px] font-semibold ${display.textColor} ring-1 ${display.ringColor}`}>
-                  {display.label}{deal ? `: ${deal}` : ""}
-                </span>
+                <div key={key} className="rounded-xl bg-[var(--color-surface)] p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-bold text-[var(--color-text-primary)]">{display.label}</p>
+                      <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{platform.deal || "Deal available"}</p>
+                    </div>
+                    <a
+                      href={platform.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="touch-target inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-[var(--color-accent)] ring-1 ring-[var(--color-border)] transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      Open {display.label} →
+                    </a>
+                  </div>
+                </div>
               );
             })}
           </div>
+          <Link
+            href={`/?q=${encodeURIComponent(restaurant.name)}`}
+            className="touch-target mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white shadow-sm shadow-orange-900/10 transition-all hover:-translate-y-0.5 hover:shadow-md sm:w-auto"
+          >
+            Check all platforms for {restaurant.name}
+          </Link>
         </div>
-      </div>
-    </div>
+      )}
+    </article>
   );
 }
 
@@ -135,15 +176,16 @@ export default function BrowsePage() {
   return (
     <>
       <Nav />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-14 sm:py-20">
+      <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-12 sm:py-18">
         <div className="mb-10 animate-title-reveal">
-          <h1 className="text-3xl sm:text-5xl font-black text-[var(--color-text-primary)] tracking-tighter">
-            Browse Deals
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Discovery path</p>
+          <h1 className="text-4xl sm:text-5xl font-black text-[var(--color-text-primary)] tracking-tighter">
+            Browse verified neighborhood deals
           </h1>
-          <div className="h-1 rounded-full bg-gradient-to-r from-[#ff6b35] via-[#ec4899] to-[#8b5cf6] animate-line-grow mt-5 mb-5"></div>
-          <p className="text-[var(--color-text-secondary)] max-w-lg">
+          <div className="brand-rule animate-line-grow mt-5 mb-5 max-w-28"></div>
+          <p className="text-[var(--color-text-secondary)] max-w-2xl">
             {totalRestaurants > 0
-              ? `${totalRestaurants.toLocaleString()} restaurants with verified deals across NYC.`
+              ? `${totalRestaurants.toLocaleString()} restaurants with verified primary deals across NYC. Pick a borough, choose a neighborhood, then open a restaurant card for deal details.`
               : "Explore restaurants with active deals near you."}
           </p>
         </div>
@@ -151,6 +193,13 @@ export default function BrowsePage() {
         {error && (
           <div className="rounded-2xl border border-[var(--color-error)]/20 bg-[var(--color-error-dim)] p-5 text-sm text-[var(--color-error)] animate-fade-in">
             <p>{error}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="touch-target mt-3 inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-[var(--color-error)] ring-1 ring-[var(--color-error)]/20"
+            >
+              Try again
+            </button>
           </div>
         )}
 
@@ -172,13 +221,13 @@ export default function BrowsePage() {
               <button
                 key={b.name}
                 onClick={() => { setSelectedBorough(b.name); setExpandedNeighborhood(null); setSearchFilter(""); }}
-                className={`text-left rounded-2xl border-2 border-[var(--color-border)] bg-white p-6 transition-all duration-300 hover:border-[var(--color-gold)]/40 hover:shadow-lg hover:shadow-orange-50 hover:scale-[1.02] animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}
+                 className={`text-left rounded-2xl border-2 border-[var(--color-border)] bg-white p-6 transition-all duration-300 hover:scale-[1.02] hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-orange-900/5 animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}
               >
                 <h2 className="text-xl font-black text-[var(--color-text-primary)]">{b.name}</h2>
                 <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                   {b.neighborhoods.length} neighborhood{b.neighborhoods.length !== 1 ? "s" : ""}
                 </p>
-                <p className="mt-0.5 text-xs text-[var(--color-gold)] font-semibold">
+               <p className="mt-0.5 text-xs text-[var(--color-accent)] font-semibold">
                   {b.totalRestaurants} restaurant{b.totalRestaurants !== 1 ? "s" : ""} with deals
                 </p>
               </button>
@@ -191,7 +240,7 @@ export default function BrowsePage() {
           <div className="animate-fade-in">
             <button
               onClick={() => { setSelectedBorough(null); setExpandedNeighborhood(null); setRestaurants([]); setSearchFilter(""); }}
-              className="mb-6 text-sm font-medium text-[var(--color-gold)] hover:underline transition-colors"
+              className="touch-target mb-6 inline-flex items-center rounded-xl text-sm font-bold text-[var(--color-accent)] transition-colors hover:underline"
             >
               ← All boroughs
             </button>
@@ -206,8 +255,9 @@ export default function BrowsePage() {
                 type="text"
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
+                aria-label="Filter neighborhoods"
                 placeholder="Filter neighborhoods..."
-                className="w-full mb-6 rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
+                className="mb-6 min-h-12 w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm transition-all placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-4 focus:ring-[var(--color-accent)]/15"
               />
             )}
 
@@ -218,23 +268,24 @@ export default function BrowsePage() {
                   <div key={n.slug} className={isExpanded ? "sm:col-span-2" : ""}>
                     <button
                       onClick={() => handleNeighborhoodClick(n.slug)}
-                      className={`w-full text-left rounded-2xl border-2 p-5 transition-all duration-300 ${
+                      aria-expanded={isExpanded}
+                      className={`touch-target w-full text-left rounded-2xl border-2 p-5 transition-all duration-300 ${
                         isExpanded
-                          ? "border-[var(--color-gold)]/40 bg-gradient-to-br from-orange-50 to-white shadow-lg shadow-orange-100/50"
-                          : "border-[var(--color-border)] bg-white hover:border-[var(--color-gold)]/30 hover:shadow-md hover:shadow-orange-50"
+                          ? "border-[var(--color-accent)]/40 bg-gradient-to-br from-[var(--color-surface-overlay)] to-white shadow-lg shadow-orange-900/5"
+                          : "border-[var(--color-border)] bg-white hover:border-[var(--color-accent)]/30 hover:shadow-md hover:shadow-orange-900/5"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <h3 className="font-bold text-[var(--color-text-primary)]">{n.name}</h3>
                         <span className={`text-xs text-[var(--color-text-muted)] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>▼</span>
                       </div>
-                      <p className="mt-0.5 text-xs text-[var(--color-gold)] font-semibold">
+                      <p className="mt-0.5 text-xs text-[var(--color-accent)] font-semibold">
                         {n.restaurantCount} restaurant{n.restaurantCount !== 1 ? "s" : ""}
                       </p>
                     </button>
 
                     {isExpanded && (
-                      <div className="mt-2 rounded-2xl border border-[var(--color-border)] bg-white p-4 animate-fade-in">
+                      <div className="mt-2 rounded-2xl border border-[var(--color-border)] bg-white p-4 animate-fade-in shadow-sm">
                         {loadingRestaurants ? (
                           <div className="space-y-3 py-2">
                             {Array.from({ length: 3 }).map((_, j) => (

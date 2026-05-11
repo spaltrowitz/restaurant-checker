@@ -32,51 +32,53 @@ export async function POST(request: Request) {
   const limited = rateLimit(request, "/api/favorites", REPORT_LIMIT);
   if (limited) return limited;
 
+  let restaurantName: unknown;
   try {
     const body = await request.json();
-    const { restaurantName } = body;
-
-    if (!restaurantName || typeof restaurantName !== "string") {
-      return Response.json(
-        { error: "restaurantName is required" },
-        { status: 400 }
-      );
-    }
-
-    if (restaurantName.trim().length < 2) {
-      return Response.json(
-        { error: "Restaurant name too short" },
-        { status: 400 }
-      );
-    }
-
-    const userHash = await getUserHash();
-    addFavorite(userHash, restaurantName);
-    return Response.json({ success: true });
+    restaurantName = body?.restaurantName;
   } catch {
-    return Response.json({ error: "Invalid request" }, { status: 400 });
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
+
+  if (!restaurantName || typeof restaurantName !== "string") {
+    return Response.json(
+      { error: "restaurantName is required" },
+      { status: 400 }
+    );
+  }
+
+  if (restaurantName.trim().length < 2) {
+    return Response.json(
+      { error: "Restaurant name too short" },
+      { status: 400 }
+    );
+  }
+
+  const userHash = await getUserHash();
+  addFavorite(userHash, restaurantName);
+  return Response.json({ success: true });
 }
 
 export async function DELETE(request: Request) {
   const limited = rateLimit(request, "/api/favorites", REPORT_LIMIT);
   if (limited) return limited;
 
+  let restaurantName: unknown;
   try {
     const body = await request.json();
-    const { restaurantName } = body;
-
-    if (!restaurantName || typeof restaurantName !== "string") {
-      return Response.json(
-        { error: "restaurantName is required" },
-        { status: 400 }
-      );
-    }
-
-    const userHash = await getUserHash();
-    removeFavorite(userHash, restaurantName);
-    return Response.json({ success: true });
+    restaurantName = body?.restaurantName;
   } catch {
-    return Response.json({ error: "Invalid request" }, { status: 400 });
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
+
+  if (!restaurantName || typeof restaurantName !== "string") {
+    return Response.json(
+      { error: "restaurantName is required" },
+      { status: 400 }
+    );
+  }
+
+  const userHash = await getUserHash();
+  removeFavorite(userHash, restaurantName);
+  return Response.json({ success: true });
 }

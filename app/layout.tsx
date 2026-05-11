@@ -7,10 +7,20 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatdiscounted.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "EatDiscounted — Every Deal at Any NYC Restaurant",
   description:
     "Find every deal, discount & reward at any NYC restaurant. 4 verified APIs, 8 airline programs, cashback & points — one search, every platform.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   openGraph: {
     title: "EatDiscounted — Every Deal at Any NYC Restaurant",
     description: "Find every deal, discount & reward at any NYC restaurant. 4 verified APIs, 8 airline programs, cashback & points.",
