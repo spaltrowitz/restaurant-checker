@@ -229,8 +229,6 @@ describe("batchSearch()", () => {
       "Too Good To Go",
       "Pulsd",
       "Restaurant.com",
-      "Groupon",
-      "LivingSocial",
     ];
 
     for (const name of platformNames) {
@@ -927,121 +925,6 @@ describe("extractDealDetails()", () => {
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  evaluateSearchResults() — New platform evaluation
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-describe("evaluateSearchResults() new platforms", () => {
-  // --- Groupon ---
-  it("Groupon: finds restaurant deal result on groupon.com", () => {
-    const platform = makePlatform({
-      name: "Groupon",
-      domainFilter: "groupon.com",
-      rewardType: "discount",
-    });
-
-    const result = evaluateSearchResults(platform, "Carbone", {
-      results: [
-        {
-          title: "Carbone NYC - Restaurant Deal",
-          href: "https://www.groupon.com/deals/carbone-nyc",
-          snippet: "Get 30% off dining at Carbone in Manhattan",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(true);
-    expect(result.platform).toBe("Groupon");
-    expect(result.url).toContain("groupon.com");
-  });
-
-  it("Groupon: filters out non-restaurant result on groupon.com", () => {
-    const platform = makePlatform({
-      name: "Groupon",
-      domainFilter: "groupon.com",
-    });
-
-    // Non-restaurant result (spa) — title doesn't match "Carbone"
-    const result = evaluateSearchResults(platform, "Carbone", {
-      results: [
-        {
-          title: "Best Spa Deals NYC - Groupon",
-          href: "https://www.groupon.com/deals/spa-nyc",
-          snippet: "Relax at Carbon Spa in NYC",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(false);
-  });
-
-  it("Groupon: rejects result from wrong domain", () => {
-    const platform = makePlatform({
-      name: "Groupon",
-      domainFilter: "groupon.com",
-    });
-
-    const result = evaluateSearchResults(platform, "Carbone", {
-      results: [
-        {
-          title: "Carbone Restaurant Review",
-          href: "https://yelp.com/biz/carbone-nyc",
-          snippet: "Carbone is a fantastic Italian restaurant",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(false);
-  });
-
-  // --- LivingSocial ---
-  it("LivingSocial: finds restaurant deal", () => {
-    const platform = makePlatform({
-      name: "LivingSocial",
-      domainFilter: "livingsocial.com",
-      rewardType: "discount",
-    });
-
-    const result = evaluateSearchResults(platform, "L'Artusi", {
-      results: [
-        {
-          title: "L'Artusi - Italian Dining Deal | LivingSocial",
-          href: "https://www.livingsocial.com/deals/lartusi-nyc",
-          snippet: "Save 40% on dinner at L'Artusi in West Village, Manhattan",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(true);
-    expect(result.platform).toBe("LivingSocial");
-  });
-
-  it("LivingSocial: rejects result from wrong domain", () => {
-    const platform = makePlatform({
-      name: "LivingSocial",
-      domainFilter: "livingsocial.com",
-    });
-
-    const result = evaluateSearchResults(platform, "Carbone", {
-      results: [
-        {
-          title: "Carbone NYC Reservations",
-          href: "https://resy.com/cities/ny/carbone",
-          snippet: "Book Carbone on Resy",
-        },
-      ],
-      blocked: false,
-    });
-
-    expect(result.found).toBe(false);
-  });
-
-  // --- Eater and The Infatuation removed — they are review sites, not deal platforms ---
-});
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Query tuning — domain/path filtering behavior
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 describe("Query tuning", () => {
@@ -1127,17 +1010,17 @@ describe("Query tuning", () => {
 //  NYC location filter — new platforms integration
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 describe("NYC location filter with new platforms", () => {
-  it("Groupon: rejects non-NYC location result", () => {
+  it("discount platform: rejects non-NYC location result", () => {
     const platform = makePlatform({
-      name: "Groupon",
-      domainFilter: "groupon.com",
+      name: "TestDiscount",
+      domainFilter: "example.com",
     });
 
     const result = evaluateSearchResults(platform, "Joe's Pizza", {
       results: [
         {
           title: "Joe's Pizza - Chicago Deal",
-          href: "https://www.groupon.com/deals/joes-pizza-chicago",
+          href: "https://www.example.com/deals/joes-pizza-chicago",
           snippet: "Great pizza deal at Joe's Pizza in Chicago, Illinois",
         },
       ],
@@ -1147,17 +1030,17 @@ describe("NYC location filter with new platforms", () => {
     expect(result.found).toBe(false);
   });
 
-  it("Groupon: allows result with NYC indicator", () => {
+  it("discount platform: allows result with NYC indicator", () => {
     const platform = makePlatform({
-      name: "Groupon",
-      domainFilter: "groupon.com",
+      name: "TestDiscount",
+      domainFilter: "example.com",
     });
 
     const result = evaluateSearchResults(platform, "Joe's Pizza", {
       results: [
         {
           title: "Joe's Pizza - NYC Deal",
-          href: "https://www.groupon.com/deals/joes-pizza-nyc",
+          href: "https://www.example.com/deals/joes-pizza-nyc",
           snippet: "Classic New York slice deal at Joe's Pizza in Manhattan",
         },
       ],
@@ -1167,17 +1050,17 @@ describe("NYC location filter with new platforms", () => {
     expect(result.found).toBe(true);
   });
 
-  it("LivingSocial: rejects non-NYC location result", () => {
+  it("deal platform: rejects non-NYC location result", () => {
     const platform = makePlatform({
-      name: "LivingSocial",
-      domainFilter: "livingsocial.com",
+      name: "TestDeals",
+      domainFilter: "example.com",
     });
 
     const result = evaluateSearchResults(platform, "Nobu", {
       results: [
         {
-          title: "Nobu Restaurant Deal | LivingSocial",
-          href: "https://www.livingsocial.com/deals/nobu-miami",
+          title: "Nobu Restaurant Deal",
+          href: "https://www.example.com/deals/nobu-miami",
           snippet: "Dine at Nobu in Miami Beach, Florida",
         },
       ],
@@ -1187,17 +1070,17 @@ describe("NYC location filter with new platforms", () => {
     expect(result.found).toBe(false);
   });
 
-  it("LivingSocial: allows result with NYC indicator", () => {
+  it("deal platform: allows result with NYC indicator", () => {
     const platform = makePlatform({
-      name: "LivingSocial",
-      domainFilter: "livingsocial.com",
+      name: "TestDeals",
+      domainFilter: "example.com",
     });
 
     const result = evaluateSearchResults(platform, "Nobu", {
       results: [
         {
-          title: "Nobu Restaurant Deal | LivingSocial",
-          href: "https://www.livingsocial.com/deals/nobu-nyc",
+          title: "Nobu Restaurant Deal",
+          href: "https://www.example.com/deals/nobu-nyc",
           snippet: "Dine at Nobu in Tribeca, NYC — exclusive deals and discounts",
         },
       ],
@@ -1208,16 +1091,13 @@ describe("NYC location filter with new platforms", () => {
   });
 
   it("new platform result with no location mentioned is allowed", () => {
-    const platform = makePlatform({
-      name: "Groupon",
-      domainFilter: "groupon.com",
-    });
+    const platform = makePlatform({ name: "TestDiscount", domainFilter: "example.com" });
 
     const result = evaluateSearchResults(platform, "Carbone", {
       results: [
         {
           title: "Carbone Restaurant Deal",
-          href: "https://www.groupon.com/deals/carbone",
+          href: "https://www.example.com/deals/carbone",
           snippet: "Save on your next dinner at Carbone with this exclusive deal",
         },
       ],

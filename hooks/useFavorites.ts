@@ -78,7 +78,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       fetch("/api/favorites", {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ restaurantName: name }),
       }).catch(() => {
         setFavorites((current) =>
           removing

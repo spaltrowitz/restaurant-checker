@@ -311,7 +311,7 @@ type RewardsNetworkMerchant = {
   designation?: string;
 };
 
-let rewardsNetworkCache = new Map<string, CacheEntry<RewardsNetworkMerchant[]>>();
+const rewardsNetworkCache = new Map<string, CacheEntry<RewardsNetworkMerchant[]>>();
 const REWARDS_NETWORK_CACHE_TTL = 3_600_000; // 1 hour
 const REWARDS_NETWORK_API_URL =
   "https://aadvantagedining.com/api/v2/Merchants/Search";
@@ -788,7 +788,7 @@ function isNYCZipCode(zip: string): boolean {
 }
 
 export function isNonNYCResult(title: string, snippet: string, href: string): boolean {
-  const combined = `${title} ${snippet}`.toLowerCase();
+  const combined = `${title} ${snippet} ${href}`.toLowerCase();
   const hasNYC = NYC_INDICATORS.some((ind) => combined.includes(ind));
   if (hasNYC) return false;
 

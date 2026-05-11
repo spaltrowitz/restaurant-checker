@@ -36,7 +36,7 @@ function hasDealDetails(details: string): boolean {
 
 // Cashback/discount platforms that give real money back
 const CASHBACK_PLATFORMS = new Set(["Upside", "Nea", "Rakuten Dining"]);
-const DISCOUNT_PLATFORMS = new Set(["Too Good To Go", "Pulsd", "Restaurant.com", "Groupon", "LivingSocial", "inKind"]);
+const DISCOUNT_PLATFORMS = new Set(["Too Good To Go", "Pulsd", "Restaurant.com", "inKind"]);
 
 function rankResult(result: CheckResult): number {
   // Tier 1a: API cashback results (Upside — real money back)

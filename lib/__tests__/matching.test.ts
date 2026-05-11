@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { norm, slugVariants, matchesRestaurant, stripThePrefix } from "../matching";
+import { norm, slugVariants, matchesRestaurant } from "../matching";
 import { evaluateSearchResults } from "../checkers";
-import type { Platform, CheckResult } from "../platforms";
+import type { Platform } from "../platforms";
 
 // ─── Helper to build a minimal Platform for testing ───
 function makePlatform(overrides: Partial<Platform> = {}): Platform {
@@ -54,14 +54,12 @@ describe("norm()", () => {
     expect(norm("résumé")).toBe("resume");
   });
 
-  // BUG: known total-loss for CJK characters — normalizes to empty string
-  it("normalizes CJK characters to empty string", () => {
-    expect(norm("寿司")).toBe("");
+  it("preserves CJK characters", () => {
+    expect(norm("寿司")).toBe("寿司");
   });
 
-  // BUG: known total-loss for Cyrillic
-  it("normalizes Cyrillic to empty string", () => {
-    expect(norm("Борщ")).toBe("");
+  it("preserves Cyrillic characters", () => {
+    expect(norm("Борщ")).toBe("борщ");
   });
 });
 
@@ -94,9 +92,8 @@ describe("slugVariants()", () => {
     expect(slugVariants("")).toEqual([]);
   });
 
-  // BUG: pure-Unicode names produce no variants (everything stripped)
-  it("returns empty array for pure-CJK name", () => {
-    expect(slugVariants("寿司")).toEqual([]);
+  it("generates variants for pure-CJK name", () => {
+    expect(slugVariants("寿司")).toEqual(["寿司"]);
   });
 });
 
@@ -142,8 +139,13 @@ describe("matchesRestaurant()", () => {
     expect(matchesRestaurant("odometer reading", "Odo")).toBe(false); // no boundary
   });
 
-  it("pure-Unicode name does not match anything", () => {
+  it("pure-Unicode name does not match unrelated text", () => {
     expect(matchesRestaurant("Totally unrelated text", "寿司")).toBe(false);
+  });
+
+  it("matches pure-Unicode names", () => {
+    expect(matchesRestaurant("寿司 is available tonight", "寿司")).toBe(true);
+    expect(matchesRestaurant("Борщ is on the menu", "Борщ")).toBe(true);
   });
 
   it("handles empty restaurant name", () => {
@@ -403,9 +405,7 @@ describe("norm — diacritic and punctuation normalization", () => {
     expect(norm("D'Angelo")).toBe(norm("DAngelo"));
   });
 
-  it.skip("matchesRestaurant finds D'Angelo in text with 'D Angelo' (pending Fenster normalization fix)", () => {
-    // Currently fails: norm("D'Angelo") → "dangelo" but norm("D Angelo") → "d angelo"
-    // Fenster's normalization work should reconcile apostrophe-as-space variants
+  it("matchesRestaurant finds D'Angelo in text with 'D Angelo'", () => {
     expect(matchesRestaurant("Order from D Angelo today", "D'Angelo")).toBe(true);
   });
 

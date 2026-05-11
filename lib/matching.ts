@@ -10,7 +10,7 @@ export function norm(text: string): string {
     .replace(/&/g, "and")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/[^\p{Letter}\p{Number}\s]/gu, "")
     .trim();
 }
 
@@ -35,7 +35,7 @@ export function slugVariants(name: string): string[] {
 
 function wordBoundaryMatch(haystack: string, needle: string): boolean {
   const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?:^|\\s|\\b)${escaped}(?:\\s|\\b|$)`).test(haystack);
+  return new RegExp(`(?:^|[^\\p{Letter}\\p{Number}])${escaped}(?:[^\\p{Letter}\\p{Number}]|$)`, "u").test(haystack);
 }
 
 export function matchesRestaurant(text: string, name: string): boolean {
@@ -52,6 +52,11 @@ export function matchesRestaurant(text: string, name: string): boolean {
 
   // Exact substring match
   if (t.includes(n)) return true;
+
+  // Compact match catches punctuation/spacing variants like D'Angelo vs D Angelo.
+  const tCompact = t.replace(/\s+/g, "");
+  const nCompact = n.replace(/\s+/g, "");
+  if (nCompact.length > 3 && tCompact.includes(nCompact)) return true;
 
   // Try without "The" prefix: "The Smith" matches text containing "Smith"
   const nNoThe = norm(stripThePrefix(name));
