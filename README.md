@@ -74,7 +74,7 @@ pip install -r cli/requirements.txt
 python cli/restaurant_checker.py check "Carbone"
 ```
 
-## Platforms (8)
+## Platforms (8 active)
 
 | Platform | Reward Type | Personalized? | Card Linked? |
 |----------|:-----------:|:-------------:|:------------:|
@@ -86,6 +86,8 @@ python cli/restaurant_checker.py check "Carbone"
 | **Bilt Rewards** | ⭐ Points (1-11x/dollar) | No | Yes |
 | **Rakuten Dining** | 💵 Cashback (5-10%) | No | Yes |
 | **Too Good To Go** | 🏷️ Discount (~1/3 price) | No | No |
+
+Groupon and LivingSocial are intentionally excluded from active checks. Groupon has NYC dining inventory, but it is too generic for reliable specific-restaurant matching; LivingSocial is largely duplicative of Groupon.
 
 > ⚠️ **Card conflict**: Seated, Upside, and Nea cannot share the same linked card.
 

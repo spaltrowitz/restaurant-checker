@@ -40,7 +40,6 @@ EatDiscounted is a free restaurant discount discovery tool for New York City. It
   - inKind
   - Too Good To Go
   - Restaurant.com
-  - Groupon
   - Rakuten Dining
   - Seated
   - Nea
