@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { BrandLogo } from "@/components/BrandLogo";
 import { useFavoritesOptional } from "@/hooks/useFavorites";
 
 export function Nav() {
@@ -28,7 +29,7 @@ export function Nav() {
           }}
           className="touch-target inline-flex items-center text-lg font-black text-[var(--color-text-primary)] hover:opacity-80 transition-opacity duration-300 tracking-tight"
         >
-          <span className="text-accent-gradient">Eat</span>Discounted
+          <BrandLogo />
         </Link>
         <div className="flex gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide" aria-label="Primary">
           <Link
